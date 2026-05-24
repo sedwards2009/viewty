@@ -29,7 +29,15 @@ func (a *Application) EnableLogging(on bool) {
 	a.enableLogging = on
 }
 
+func (a *Application) SetRootWidget(widget Widget) {
+	a.rootWidget = widget
+}
+
 func (a *Application) Run() {
+	if a.rootWidget == nil {
+		log.Fatalf("No root widget set on the application")
+	}
+
 	screen, err := tcell.NewScreen()
 	if err != nil {
 		log.Fatalf("%+v", err)

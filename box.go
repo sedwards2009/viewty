@@ -22,8 +22,8 @@ func (b *Box) SetBackgroundStyle(style tcell.Style) {
 func (b *Box) Render(screen tcell.Screen) {
 	x, y, w, h := b.Position()
 
-	for i := 0; i < h; i++ {
-		for j := 0; j < w; j++ {
+	for i := range h {
+		for j := range w {
 			screen.SetContent(x+j, y+i, 'A', nil, b.backgroundStyle)
 		}
 	}
