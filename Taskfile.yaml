@@ -1,0 +1,10 @@
+version: '3'
+
+tasks:
+  run-demo:
+    desc: Build and run the demo
+    dir: demos/demo
+    cmds:
+      - go build -o ../bin/termtronic
+      - ../bin/termtronic
+      - cat termtronic.log
