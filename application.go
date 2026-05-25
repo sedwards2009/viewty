@@ -81,8 +81,53 @@ func (a *Application) Run() {
 			if ev.Key() == tcell.KeyEscape || ev.Key() == tcell.KeyCtrlC {
 				quit()
 			}
+		case *tcell.EventMouse:
+			a.handleMouseEvent(ev)
+			a.rootWidget.Render(a.screen)
+
 		}
 	}
+}
+
+func (a *Application) handleMouseEvent(ev *tcell.EventMouse) {
+	x, y := ev.Position()
+	hitWidget := a.rootWidget
+	childHitWidget := hitWidget.ChildWidgetAt(x, y)
+	if childHitWidget != nil {
+		hitWidget = childHitWidget
+	}
+
+	if hitWidget == nil {
+		return
+	}
+
+    // Find the complete path from the root widget to this widget.
+	widgetPath := []Widget{}
+
+    ptr := hitWidget.Parent()
+    for ptr != nil {
+    	widgetPath = append(widgetPath, ptr)
+     	ptr = ptr.Parent();
+    }
+
+    // Perform a DOM event style 'capture' phase on each widget on the path.
+    for i, _ := range widgetPath {
+    	currentTargetWidget := widgetPath[len(widgetPath) -1 -i]
+        if currentTargetWidget.HandleMouseEvent(ev, hitWidget, EVENT_PHASE_CAPTURE) {
+        	return	// cancelled
+        }
+    }
+
+    if hitWidget.HandleMouseEvent(ev, hitWidget, EVENT_PHASE_TARGET) {
+    	return // cancelled
+    }
+
+    // Now the bubble phase
+    for _, widget := range widgetPath {
+        if widget.HandleMouseEvent(ev, hitWidget, EVENT_PHASE_BUBBLE) {
+        	return // cancelled
+        }
+    }
 }
 
 func (a *Application) setupLogging() *os.File {
