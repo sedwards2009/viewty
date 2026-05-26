@@ -58,3 +58,5 @@ func (w *WidgetBase) Render(screen tcell.Screen) {
 func (w *WidgetBase) HandleMouseEvent(event *tcell.EventMouse, target Widget, phase EventPhase) bool {
 	return false
 }
+
+func (w *WidgetBase) Focus() {}

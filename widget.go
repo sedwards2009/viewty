@@ -25,4 +25,6 @@ type Widget interface {
 
 	// Returns true if event handling should be stopped.
 	HandleMouseEvent(event *tcell.EventMouse, target Widget, phase EventPhase) bool
+
+	Focus()
 }

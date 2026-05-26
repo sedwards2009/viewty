@@ -12,17 +12,12 @@ type Application struct {
 	screen        tcell.Screen
 	rootWidget    Widget
 	enableLogging bool
+
+	focusWidget Widget
 }
 
 func NewApplication() *Application {
-	rootWidget := NewBox()
-
-	var White = tcell.NewHexColor(0xf3f3f3).TrueColor()
-    var Blue = tcell.NewHexColor(0x007ace).TrueColor()
-	rootWidget.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Blue))
-	return &Application{
-		rootWidget: rootWidget,
-	}
+	return &Application{}
 }
 
 func (a *Application) EnableLogging(on bool) {
