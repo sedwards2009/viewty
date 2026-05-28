@@ -33,8 +33,8 @@ func (b *Button) Id() string {
 	return b.id
 }
 
-func (b *Button) Render(screen tcell.Screen) {
-	x, y, w, h := b.Position()
+func (b *Button) Render(screen TranslateScreenWriter) {
+	_, _, w, h := b.Position()
 
 	var White = tcell.NewHexColor(0xf3f3f3).TrueColor()
     var Green = tcell.NewHexColor(0x0b835c).TrueColor()
@@ -43,14 +43,14 @@ func (b *Button) Render(screen tcell.Screen) {
 
 	for i := range h {
 		for j := range w {
-			screen.SetContent(x+j, y+i, ' ', nil, buttonStyle)
+			screen.SetContent(j, i, ' ', nil, buttonStyle)
 		}
 	}
-	PrintCenteredString(screen, x, y, b.width, buttonStyle, b.text)
+	PrintCenteredString(screen, 0, 0, b.width, buttonStyle, b.text)
 }
 
-func (b *Button) HandleMouseEvent(event *tcell.EventMouse, target Widget, phase EventPhase) bool {
-	if event.Buttons() == tcell.Button1 && b.onClick != nil {
+func (b *Button) HandleMouseEvent(mouseEvent MouseEvent) bool {
+	if mouseEvent.SourceEvent().Buttons() == tcell.Button1 && b.onClick != nil {
 		b.onClick(b.id)
 	}
 	return false

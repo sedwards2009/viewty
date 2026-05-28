@@ -70,7 +70,7 @@ func (a *Application) Run() {
 			width, height := ev.Size()
 			log.Printf("Resize(%d, %d)\n", width, height)
 			a.rootWidget.Reposition(0, 0, width, height)
-			a.rootWidget.Render(a.screen)
+			a.rootWidget.Render(NewTranslateScreenWriterAdapter(a.screen))
 			a.screen.Sync()
 		case *tcell.EventKey:
 			if ev.Key() == tcell.KeyEscape || ev.Key() == tcell.KeyCtrlC {
@@ -78,8 +78,7 @@ func (a *Application) Run() {
 			}
 		case *tcell.EventMouse:
 			a.handleMouseEvent(ev)
-			a.rootWidget.Render(a.screen)
-
+			a.rootWidget.Render(NewTranslateScreenWriterAdapter(a.screen))
 		}
 	}
 }
@@ -105,21 +104,39 @@ func (a *Application) handleMouseEvent(ev *tcell.EventMouse) {
      	ptr = ptr.Parent();
     }
 
+    mouseEvent := mouseEventImpl{
+    	targetWidget: hitWidget,
+        sourceEvent: ev,
+    }
+    var mouseEventInter MouseEvent = &mouseEvent
+
     // Perform a DOM event style 'capture' phase on each widget on the path.
+    mouseEvent.phase = EVENT_PHASE_CAPTURE
     for i, _ := range widgetPath {
     	currentTargetWidget := widgetPath[len(widgetPath) -1 -i]
-        if currentTargetWidget.HandleMouseEvent(ev, hitWidget, EVENT_PHASE_CAPTURE) {
+     	offsetX, offsetY := currentTargetWidget.PointToAbs(0, 0)
+        mouseEvent.x = x - offsetX
+        mouseEvent.y = y - offsetY
+        if currentTargetWidget.HandleMouseEvent(mouseEventInter) {
         	return	// cancelled
         }
     }
 
-    if hitWidget.HandleMouseEvent(ev, hitWidget, EVENT_PHASE_TARGET) {
+    mouseEvent.phase = EVENT_PHASE_TARGET
+   	offsetX, offsetY := hitWidget.PointToAbs(0, 0)
+    mouseEvent.x = x - offsetX
+    mouseEvent.y = y - offsetY
+    if hitWidget.HandleMouseEvent(mouseEventInter) {
     	return // cancelled
     }
 
     // Now the bubble phase
-    for _, widget := range widgetPath {
-        if widget.HandleMouseEvent(ev, hitWidget, EVENT_PHASE_BUBBLE) {
+    mouseEvent.phase = EVENT_PHASE_BUBBLE
+    for _, currentTargetWidget := range widgetPath {
+	   	offsetX, offsetY := currentTargetWidget.PointToAbs(0, 0)
+		mouseEvent.x = x - offsetX
+		mouseEvent.y = y - offsetY
+        if currentTargetWidget.HandleMouseEvent(mouseEventInter) {
         	return // cancelled
         }
     }

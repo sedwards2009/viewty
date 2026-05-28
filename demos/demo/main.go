@@ -31,6 +31,7 @@ func main() {
 	vFlex.AddWidget(whiteBox, 10, 1)
 
 	button := tt.NewButton()
+	button.SetName("Button")
 	button.SetText("Button clicks: 0")
 	clickCount := 0
 	button.SetOnClick(func(id string) {
@@ -39,8 +40,8 @@ func main() {
 	})
 	vFlex.AddWidget(button, 1, 0)
 
-	rootFlexH.AddWidget(vFlex, 10, 1)
 	rootFlexH.AddWidget(blueBox, 10, 2)
+	rootFlexH.AddWidget(vFlex, 10, 1)
 
 	app.SetRootWidget(rootFlexH)
 

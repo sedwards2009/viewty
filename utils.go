@@ -6,7 +6,7 @@ import (
 )
 
 
-func PrintString(screen tcell.Screen, x int, y int, style tcell.Style, str string) {
+func PrintString(screen TranslateScreenWriter, x int, y int, style tcell.Style, str string) {
 	i := 0
 	for _, r := range str {
 		screen.SetContent(x+i, y, r, nil, style)
@@ -18,7 +18,7 @@ func PrintString(screen tcell.Screen, x int, y int, style tcell.Style, str strin
 	}
 }
 
-func ClearRect(screen tcell.Screen, x int, y int, width int, height int, style tcell.Style) {
+func ClearRect(screen TranslateScreenWriter, x int, y int, width int, height int, style tcell.Style) {
 	for i := range height {
 		for j := range width {
 			screen.SetContent(x+j, y+i, ' ', nil, style)
@@ -26,7 +26,7 @@ func ClearRect(screen tcell.Screen, x int, y int, width int, height int, style t
 	}
 }
 
-func PrintCenteredString(screen tcell.Screen, x int, y int, width int, style tcell.Style, str string) {
+func PrintCenteredString(screen TranslateScreenWriter, x int, y int, width int, style tcell.Style, str string) {
 	ClearRect(screen, x, y, width, 1, style)
 	strWidth := uniwidth.StringWidth(str)
 	offset := (width - strWidth) / 2
