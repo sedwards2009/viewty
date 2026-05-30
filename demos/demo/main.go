@@ -15,12 +15,57 @@ func main() {
 	rootFlexH.SetGapSize(1)
 	rootFlexH.SetName("Flex")
 
-	var White = tcell.NewHexColor(0xf3f3f3).TrueColor()
-    var Blue = tcell.NewHexColor(0x007ace).TrueColor()
+	White := tcell.NewHexColor(0xf3f3f3).TrueColor()
+    Blue := tcell.NewHexColor(0x007ace).TrueColor()
+    Red := tcell.NewHexColor(0xce7a00).TrueColor()
+    Green := tcell.NewHexColor(0x00ce7a).TrueColor()
+    Yellow := tcell.NewHexColor(0xcece00).TrueColor()
+
+    leftVFlex := tt.NewVFlex()
 
     blueBox := tt.NewBox()
     blueBox.SetName("BlueBox")
 	blueBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Blue))
+	leftVFlex.AddWidget(blueBox, 0, 1)
+
+	scrollArea := tt.NewScrollArea()
+
+	scrollContent := tt.NewHFlex()
+    redBox := tt.NewBox()
+    redBox.SetName("RedBox")
+    redBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Red))
+    scrollContent.AddWidget(redBox, 0, 1)
+
+    greenBox := tt.NewBox()
+    greenBox.SetName("GreenBox")
+    greenBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Green))
+    scrollContent.AddWidget(greenBox, 0, 1)
+
+    yellowBox := tt.NewBox()
+    yellowBox.SetName("yellowBox")
+    yellowBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Yellow))
+    scrollContent.AddWidget(yellowBox, 0, 1)
+
+    scrollArea.SetContentWidget(scrollContent)
+    scrollArea.SetMinimumSize(80, 60)
+
+	leftVFlex.AddWidget(scrollArea, 0, 1)
+
+	scrollLeftButton := tt.NewButton()
+	scrollLeftButton.SetText("Left")
+	scrollLeftButton.SetOnClick(func (id string) {
+		scrollArea.SetOffsetX(scrollArea.OffsetX()-1)
+	})
+	scrollRightButton := tt.NewButton()
+	scrollRightButton.SetText("Right")
+	scrollRightButton.SetOnClick(func (id string) {
+		scrollArea.SetOffsetX(scrollArea.OffsetX()+1)
+	})
+	buttonFlex := tt.NewHFlex()
+	buttonFlex.SetGapSize(1)
+	buttonFlex.AddWidget(scrollLeftButton, 0, 1)
+    buttonFlex.AddWidget(scrollRightButton, 0, 1)
+    leftVFlex.AddWidget(buttonFlex, 1, 0)
 
 	vFlex := tt.NewVFlex()
 	vFlex.SetGapSize(1)
@@ -40,7 +85,7 @@ func main() {
 	})
 	vFlex.AddWidget(button, 1, 0)
 
-	rootFlexH.AddWidget(blueBox, 10, 2)
+	rootFlexH.AddWidget(leftVFlex, 10, 2)
 	rootFlexH.AddWidget(vFlex, 10, 1)
 
 	app.SetRootWidget(rootFlexH)

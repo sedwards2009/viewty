@@ -70,7 +70,7 @@ func (a *Application) Run() {
 			width, height := ev.Size()
 			log.Printf("Resize(%d, %d)\n", width, height)
 			a.rootWidget.Reposition(0, 0, width, height)
-			a.rootWidget.Render(NewTranslateScreenWriterAdapter(a.screen))
+			a.rerender()
 			a.screen.Sync()
 		case *tcell.EventKey:
 			if ev.Key() == tcell.KeyEscape || ev.Key() == tcell.KeyCtrlC {
@@ -78,11 +78,15 @@ func (a *Application) Run() {
 			}
 		case *tcell.EventMouse:
 			a.handleMouseEvent(ev)
-			a.rootWidget.Render(NewTranslateScreenWriterAdapter(a.screen))
+			a.rerender()
 		}
 	}
 }
 
+func (a *Application) rerender() {
+	a.screen.Clear()
+	a.rootWidget.Render(NewTranslateScreenWriterAdapter(a.screen))
+}
 func (a *Application) handleMouseEvent(ev *tcell.EventMouse) {
 	x, y := ev.Position()
 	hitWidget := a.rootWidget
