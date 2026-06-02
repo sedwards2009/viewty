@@ -33,7 +33,7 @@ func (b *Button) Id() string {
 	return b.id
 }
 
-func (b *Button) Render(screen TranslateScreenWriter) {
+func (b *Button) Render(painter Painter) {
 	_, _, w, h := b.Position()
 
 	var White = tcell.NewHexColor(0xf3f3f3).TrueColor()
@@ -43,10 +43,10 @@ func (b *Button) Render(screen TranslateScreenWriter) {
 
 	for i := range h {
 		for j := range w {
-			screen.SetContent(j, i, ' ', nil, buttonStyle)
+			painter.SetContent(j, i, ' ', nil, buttonStyle)
 		}
 	}
-	PrintCenteredString(screen, 0, 0, b.width, buttonStyle, b.text)
+	PrintCenteredString(painter, 0, 0, b.width, buttonStyle, b.text)
 }
 
 func (b *Button) HandleMouseEvent(mouseEvent MouseEvent) bool {

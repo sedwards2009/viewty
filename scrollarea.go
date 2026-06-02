@@ -32,8 +32,8 @@ func (s *ScrollArea) Reposition(x int, y int, width int, height int) {
     s.contentWidget.Reposition(0, 0, contentWidth, contentHeight)
 }
 
-func (s *ScrollArea) Render(screen TranslateScreenWriter) {
-	s.contentWidget.Render(screen.NewTranslate(s.offsetX, s.offsetY))	// TODO: clip
+func (s *ScrollArea) Render(painter Painter) {
+	s.contentWidget.Render(painter.Translate(s.offsetX, s.offsetY))	// TODO: clip
 }
 
 func (s *ScrollArea) ChildWidgetAt(x int, y int) Widget {

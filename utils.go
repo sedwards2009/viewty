@@ -6,32 +6,32 @@ import (
 )
 
 
-func PrintString(screen TranslateScreenWriter, x int, y int, style tcell.Style, str string) {
+func PrintString(painter Painter, x int, y int, style tcell.Style, str string) {
 	i := 0
 	for _, r := range str {
-		screen.SetContent(x+i, y, r, nil, style)
+		painter.SetContent(x+i, y, r, nil, style)
         w := uniwidth.RuneWidth(r)
         for j := range w-1 {
-          screen.SetContent(x+j, y, ' ', nil, style)
+          painter.SetContent(x+j, y, ' ', nil, style)
         }
         i += w
 	}
 }
 
-func ClearRect(screen TranslateScreenWriter, x int, y int, width int, height int, style tcell.Style) {
+func ClearRect(painter Painter, x int, y int, width int, height int, style tcell.Style) {
 	for i := range height {
 		for j := range width {
-			screen.SetContent(x+j, y+i, ' ', nil, style)
+			painter.SetContent(x+j, y+i, ' ', nil, style)
 		}
 	}
 }
 
-func PrintCenteredString(screen TranslateScreenWriter, x int, y int, width int, style tcell.Style, str string) {
-	ClearRect(screen, x, y, width, 1, style)
+func PrintCenteredString(painter Painter, x int, y int, width int, style tcell.Style, str string) {
+	ClearRect(painter, x, y, width, 1, style)
 	strWidth := uniwidth.StringWidth(str)
 	offset := (width - strWidth) / 2
 	if offset < 0 {
 		offset = 0
 	}
-	PrintString(screen, x+offset, y, style, str)
+	PrintString(painter, x+offset, y, style, str)
 }

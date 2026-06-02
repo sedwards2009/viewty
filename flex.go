@@ -84,10 +84,13 @@ func layout(size int, gapSize int, items []flexItem) ([]int, []int) {
 	return xList, widthList
 }
 
-func (f *Flex) Render(screen TranslateScreenWriter) {
+func (f *Flex) Render(painter Painter) {
 	for _, item := range f.items {
-		x, y, _, _ := item.widget.Position()
-		item.widget.Render(screen.NewTranslate(x, y))
+		x, y, width, height := item.widget.Position()
+		clippedPainter := painter.Translate(x, y).ApplyClipArea(0, 0, width, height)
+		if clippedPainter.IsVisible() {}
+			item.widget.Render(clippedPainter)
+		}
 	}
 }
 

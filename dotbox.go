@@ -22,10 +22,10 @@ func (d *DotBox) SetBackgroundStyle(style tcell.Style) {
 	d.backgroundStyle = style
 }
 
-func (d *DotBox) Render(screen TranslateScreenWriter) {
+func (d *DotBox) Render(painter Painter) {
 	_, _, w, h := d.Position()
-	ClearRect(screen, 0, 0, w, h, d.backgroundStyle)
-	screen.SetContent(d.dotX, d.dotY, 'X', nil, d.backgroundStyle)
+	ClearRect(painter, 0, 0, w, h, d.backgroundStyle)
+	painter.SetContent(d.dotX, d.dotY, 'X', nil, d.backgroundStyle)
 }
 
 func (d *DotBox) HandleMouseEvent(mouseEvent MouseEvent) bool {

@@ -85,7 +85,7 @@ func (a *Application) Run() {
 
 func (a *Application) rerender() {
 	a.screen.Clear()
-	a.rootWidget.Render(NewTranslateScreenWriterAdapter(a.screen))
+	a.rootWidget.Render(NewPainter(a.screen))
 }
 func (a *Application) handleMouseEvent(ev *tcell.EventMouse) {
 	x, y := ev.Position()

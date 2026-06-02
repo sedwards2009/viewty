@@ -46,7 +46,7 @@ type Widget interface {
 	// Render the widget to the screen
 	//
 	// Note: This is for internal use.
-	Render(screen TranslateScreenWriter)
+	Render(screen Painter)
 
     // True if point is on the widget.
     //

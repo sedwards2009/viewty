@@ -19,12 +19,12 @@ func (b *Box) SetBackgroundStyle(style tcell.Style) {
 	b.backgroundStyle = style
 }
 
-func (b *Box) Render(screen TranslateScreenWriter) {
+func (b *Box) Render(painter Painter) {
 	_, _, w, h := b.Position()
 
 	for i := range h {
 		for j := range w {
-			screen.SetContent(j, i, 'A', nil, b.backgroundStyle)
+			painter.SetContent(j, i, 'A', nil, b.backgroundStyle)
 		}
 	}
 }

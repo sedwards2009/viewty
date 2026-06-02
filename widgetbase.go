@@ -56,7 +56,7 @@ func (w *WidgetBase) ChildWidgetAt(x int, y int) Widget {
 	return nil
 }
 
-func (w *WidgetBase) Render(screen TranslateScreenWriter) {
+func (w *WidgetBase) Render(screen Painter) {
 }
 
 func (w *WidgetBase) HandleMouseEvent(mouseEvent MouseEvent) bool {

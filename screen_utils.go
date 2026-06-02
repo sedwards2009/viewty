@@ -4,141 +4,105 @@ import (
 	tcell "github.com/gdamore/tcell/v2"
 )
 
-type ScreenWriter interface {
+type Painter interface {
 	GetContent(x, y int) (primary rune, combining []rune, style tcell.Style, width int)
+
+	// Set the cell contents at x,y
+	//
+	// Note: Clipping is first applied and then translation before writing the cell to the screen.
 	SetContent(x int, y int, primary rune, combining []rune, style tcell.Style)
 	Size() (width, height int)
-	Fill(rune, tcell.Style)
+    Translate(tX int, tY int) Painter
+    ApplyClipArea(x int, y int, width int, height int) Painter
+    IsVisible() bool
 }
 
-type TranslateScreenWriter interface {
-	ScreenWriter
-	AbsolutePosition(x int, y int) (absX int, absY int)
-	NewClipXY(x int, y int) TranslateScreenWriter
-	NewTranslate(tx int, ty int) TranslateScreenWriter
+type PainterImpl struct {
+	screen     tcell.Screen
+	clipX      int	// Clip is in terms of the final screen space
+	clipY      int
+	clipWidth  int
+	clipHeight int
+	translateX int
+	translateY int
 }
 
-// -------------------------------------------------------------------------
-type TranslateScreenWriterAdapter struct {
-	screen tcell.Screen
-}
-
-func NewTranslateScreenWriterAdapter(screen tcell.Screen) *TranslateScreenWriterAdapter {
-	return &TranslateScreenWriterAdapter{screen: screen}
-}
-
-func (a *TranslateScreenWriterAdapter) GetContent(x, y int) (primary rune, combining []rune, style tcell.Style, width int) {
-	return a.screen.GetContent(x, y)
-}
-
-func (a *TranslateScreenWriterAdapter) SetContent(x int, y int, primary rune, combining []rune, style tcell.Style) {
-	a.screen.SetContent(x, y, primary, combining, style)
-}
-
-func (a *TranslateScreenWriterAdapter) Size() (width, height int) {
-	return a.screen.Size()
-}
-
-func (a *TranslateScreenWriterAdapter) Fill(r rune, style tcell.Style) {
-	a.screen.Fill(r, style)
-}
-
-func (a *TranslateScreenWriterAdapter) AbsolutePosition(x int, y int) (absX int, absY int) {
-	return x, y
-}
-
-func (a *TranslateScreenWriterAdapter) NewClipXY(x int, y int) TranslateScreenWriter {
-	width, height := a.screen.Size()
-	c := NewClippingScreenWriter(a, x, y, width, height)
-	return c
-}
-
-func (a *TranslateScreenWriterAdapter) NewTranslate(tx int, ty int) TranslateScreenWriter {
-	width, height := a.screen.Size()
-	c := NewClippingScreenWriter(a, 0, 0, width, height)
-	return c.NewTranslate(tx, ty)
-}
-
-//-------------------------------------------------------------------------
-
-type ClippingScreenWriter struct {
-	writer ScreenWriter
-	x      int
-	y      int
-	tx     int
-	ty     int
-	width  int
-	height int
-}
-
-// NewClippingScreenWriter creates a new ScreenWriter that clips the output to the specified rectangle.
-// The x and y parameters specify the top-left corner of the clipping area, and width and height specify
-// the size of the clipping area.
-//
-// Functions on this type use a relative coordinate system based on the clipping area.
-// For example, if the clipping area is 10x10 starting at (5,5), then SetContent(0, 0, ...) will write to
-// (5, 5) in the original screen coordinates.
-func NewClippingScreenWriter(w ScreenWriter, x, y, width, height int) *ClippingScreenWriter {
-	return &ClippingScreenWriter{
-		writer: w,
-		x:      x,
-		y:      y,
-		width:  width,
-		height: height,
+func NewPainter(screen tcell.Screen) Painter {
+	width, height := screen.Size()
+	return &PainterImpl{
+		screen: screen,
+		clipWidth: width,
+		clipHeight: height,
 	}
 }
 
-func (c *ClippingScreenWriter) GetContent(x, y int) (primary rune, combining []rune, style tcell.Style, width int) {
-	return c.writer.GetContent(c.x+x+c.tx, c.y+y+c.ty)
+func (p *PainterImpl) GetContent(x, y int) (primary rune, combining []rune, style tcell.Style, width int) {
+	xTranslated := x + p.translateX
+	yTranslated := y + p.translateY
+	return p.screen.GetContent(xTranslated, yTranslated)
 }
 
-func (c *ClippingScreenWriter) SetContent(x int, y int, primary rune, combining []rune, style tcell.Style) {
-	transX := x + c.tx
-	transY := y + c.ty
-	if transX < 0 || transY < 0 || transX >= c.width || transY >= c.height {
+func (p *PainterImpl) SetContent(x int, y int, primary rune, combining []rune, style tcell.Style) {
+	xTranslated := x + p.translateX
+	yTranslated := y + p.translateY
+	if xTranslated < p.clipX || xTranslated >= (p.clipX + p.clipWidth) {
 		return
 	}
-	c.writer.SetContent(transX+c.x, transY+c.y, primary, combining, style)
+	if yTranslated < p.clipY || yTranslated >= (p.clipY + p.clipHeight) {
+		return
+	}
+	p.screen.SetContent(xTranslated, yTranslated, primary, combining, style)
 }
 
-func (c *ClippingScreenWriter) Size() (width int, height int) {
-	return c.width, c.height
+func (p *PainterImpl) Size() (width, height int) {
+	return p.screen.Size()
 }
 
-func (c *ClippingScreenWriter) Fill(r rune, style tcell.Style) {
-	for y := 0; y < c.height; y++ {
-		for x := 0; x < c.width; x++ {
-			c.writer.SetContent(c.x+x, c.y+y, r, nil, style)
-		}
+func (p *PainterImpl) IsVisible() bool {
+	return p.clipWidth != 0 && p.clipHeight != 0
+}
+
+func (p *PainterImpl) Translate(translateX int, translateY int) Painter {
+	return &PainterImpl{
+		screen:     p.screen,
+		clipX:      p.clipX,
+		clipY:      p.clipY,
+		clipWidth:  p.clipWidth,
+		clipHeight: p.clipHeight,
+		translateX: translateX + p.translateX,
+		translateY: translateY + p.translateY,
 	}
 }
 
-func (c *ClippingScreenWriter) AbsolutePosition(x int, y int) (absX int, absY int) {
-	return x + c.x, y + c.y
+func (p *PainterImpl) ApplyClipArea(cX int, cY int, width int, height int) Painter {
+	newX, newY, newWidth, newHeight := intersectRectangles(
+		p.clipX, p.clipY, p.clipWidth, p.clipHeight,
+		cX + p.translateX, cY+p.translateY, width, height,
+	)
+	if newWidth < 0 || newHeight < 0 {
+		newWidth = 0
+		newHeight = 0
+	}
+	return &PainterImpl{
+		screen:     p.screen,
+		clipX:      newX,
+		clipY:      newY,
+		clipWidth:  newWidth,
+		clipHeight: newHeight,
+		translateX: p.translateX,
+		translateY: p.translateY,
+	}
 }
 
-func (c *ClippingScreenWriter) NewClipXY(x int, y int) TranslateScreenWriter {
-	r := &ClippingScreenWriter{
-		writer: c.writer,
-		x:      c.x + x,
-		y:      c.y + y,
-		tx:     c.tx,
-		ty:     c.ty,
-		width:  c.width - x,
-		height: c.height - y,
-	}
-	return r
-}
-
-func (c *ClippingScreenWriter) NewTranslate(tx int, ty int) TranslateScreenWriter {
-	r := &ClippingScreenWriter{
-		writer: c.writer,
-		x:      c.x,
-		y:      c.y,
-		width:  c.width,
-		height: c.height,
-		tx:     tx + c.tx,
-		ty:     ty + c.ty,
-	}
-	return r
+// IntersectRectangles computes the intersection of two rectangles.
+// Rectangles are defined by their top-left corner (x, y) and dimensions (width, height).
+// Returns the intersection rectangle coordinates, or 0,0,0,0 if there is no intersection.
+func intersectRectangles(r1X, r1Y, r1Width, r1Height, r2X, r2Y, r2Width, r2Height int) (x, y, width, height int) {
+	x = max(r1X, r2X)
+	y = max(r1Y, r2Y)
+	right := min(r1X+r1Width, r2X+r2Width)
+	bottom := min(r1Y+r1Height, r2Y+r2Height)
+	width = right - x
+	height = bottom - y
+	return
 }
