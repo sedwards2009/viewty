@@ -64,8 +64,13 @@ func layout(size int, gapSize int, items []flexItem) ([]int, []int) {
 	fixedSize := 0
 	proportionDenominator := 0
 	for _, item := range items {
-		fixedSize += item.fixed
-		proportionDenominator += item.proportion
+		if item.widget.IsVisible() {
+			fixedSize += item.fixed
+			proportionDenominator += item.proportion
+		}
+	}
+	if proportionDenominator == 0 {
+		proportionDenominator = 1
 	}
 
 	remaining := size - fixedSize - (gapSize * (len(items) -1))
@@ -74,22 +79,30 @@ func layout(size int, gapSize int, items []flexItem) ([]int, []int) {
 	widthList := []int{}
 	x := 0
 	for _, item := range items {
+		width := 0
+		if item.widget.IsVisible() {
+			width = item.fixed + item.proportion * remaining / proportionDenominator
+		}
+
 		xList = append(xList, x)
-		width := item.fixed + item.proportion * remaining / proportionDenominator
 		widthList = append(widthList, width)
 
-		x += width
-		x += gapSize
+		if item.widget.IsVisible() {
+			x += width
+			x += gapSize
+		}
 	}
 	return xList, widthList
 }
 
 func (f *Flex) Render(painter Painter) {
 	for _, item := range f.items {
-		x, y, width, height := item.widget.Position()
-		clippedPainter := painter.Translate(x, y).ApplyClipArea(0, 0, width, height)
-		if clippedPainter.IsVisible() {}
-			item.widget.Render(clippedPainter)
+		if item.widget.IsVisible() {
+			x, y, width, height := item.widget.Position()
+			clippedPainter := painter.Translate(x, y).ApplyClipArea(0, 0, width, height)
+			if clippedPainter.IsVisible() {
+				item.widget.Render(clippedPainter)
+			}
 		}
 	}
 }
@@ -99,7 +112,7 @@ func (f *Flex) ChildWidgetAt(x int, y int) Widget {
 	childX := x - myX
 	childY := y - myY
 	for _, item := range f.items {
-		if item.widget.ContainsPoint(childX, childY) {
+		if item.widget.IsVisible() && item.widget.ContainsPoint(childX, childY) {
 			childWidget := item.widget.ChildWidgetAt(childX, childY)
 			if childWidget != nil {
 				return childWidget

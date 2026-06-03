@@ -2,16 +2,17 @@ package termtronic
 
 
 type WidgetBase struct {
-	parent Widget
-	name string
-	x      int
-	y      int
-	width  int
-	height int
+	parent  Widget
+	name    string
+	x       int
+	y       int
+	width   int
+	height  int
+	visible bool
 }
 
 func NewWidgetBase() *WidgetBase {
-	return &WidgetBase{}
+	return &WidgetBase{visible: true}
 }
 
 func (w *WidgetBase) SetParent(parent Widget) {
@@ -64,3 +65,11 @@ func (w *WidgetBase) HandleMouseEvent(mouseEvent MouseEvent) bool {
 }
 
 func (w *WidgetBase) Focus() {}
+
+func (w *WidgetBase) SetVisible(visible bool) {
+	w.visible = visible
+}
+
+func (w *WidgetBase) IsVisible() bool {
+	return w.visible
+}

@@ -61,6 +61,7 @@ func main() {
 	scrollRightButton.SetOnClick(func (id string) {
 		scrollArea.SetOffsetX(scrollArea.OffsetX()+1)
 	})
+
 	buttonFlex := tt.NewHFlex()
 	buttonFlex.SetGapSize(1)
 	buttonFlex.AddWidget(scrollLeftButton, 0, 1)
@@ -74,6 +75,10 @@ func main() {
 	whiteBox.SetName("WhiteDotBox")
 	whiteBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(Blue).Background(White))
 	vFlex.AddWidget(whiteBox, 10, 1)
+
+	frame := tt.NewFrame()
+	frame.SetTitle("A Frame")
+	vFlex.AddWidget(frame, 10, 1)
 
 	button := tt.NewButton()
 	button.SetName("Button")

@@ -66,4 +66,7 @@ type Widget interface {
 	HandleMouseEvent(mouseEvent MouseEvent) bool
 
 	Focus()
+
+	SetVisible(visible bool)
+	IsVisible() bool
 }
