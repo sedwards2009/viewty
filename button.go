@@ -38,7 +38,7 @@ func (b *Button) Render(painter Painter) {
 
 	var foreground = tcell.NewHexColor(0xf3f3f3).TrueColor()
     var background = tcell.NewHexColor(0x0b835c).TrueColor()
-    if b.HasFocus() {
+    if app.HasFocus(b) {
     	background = tcell.NewHexColor(0xf30000).TrueColor()
 	}
 
@@ -49,7 +49,15 @@ func (b *Button) Render(painter Painter) {
 
 func (b *Button) HandleMouseEvent(mouseEvent MouseEvent) bool {
 	if mouseEvent.SourceEvent().Buttons() == tcell.Button1 && b.onClick != nil {
-		b.Focus()
+		app.Focus(b)
+		b.onClick(b.id)
+	}
+	return false
+}
+
+func (b *Button) HandleKeyEvent(keyEvent KeyEvent) bool {
+    key := keyEvent.SourceEvent().Key()
+	if (key == tcell.KeyEnter || key == tcell.KeyRune && keyEvent.SourceEvent().Rune() == ' ') && b.onClick != nil {
 		b.onClick(b.id)
 	}
 	return false

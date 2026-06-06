@@ -35,8 +35,8 @@ func (a *Application) Focus(widget Widget) {
 	a.focusWidget = widget
 }
 
-func (a *Application) GetFocusWidget() Widget {
-	return a.focusWidget
+func (a *Application) HasFocus(widget Widget) bool {
+    return a.focusWidget == widget
 }
 
 func (a *Application) IsWidgetOnFocusPath(widget Widget) bool {
@@ -100,6 +100,9 @@ func (a *Application) Run() {
 		case *tcell.EventKey:
 			if ev.Key() == tcell.KeyEscape || ev.Key() == tcell.KeyCtrlC {
 				quit()
+			} else {
+			    a.handleKeyEvent(ev)
+				a.rerender()
 			}
 		case *tcell.EventMouse:
 			a.handleMouseEvent(ev)
@@ -112,6 +115,7 @@ func (a *Application) rerender() {
 	a.screen.Clear()
 	a.rootWidget.Render(NewPainter(a.screen))
 }
+
 func (a *Application) handleMouseEvent(ev *tcell.EventMouse) {
 	x, y := ev.Position()
 	hitWidget := a.rootWidget
@@ -166,6 +170,50 @@ func (a *Application) handleMouseEvent(ev *tcell.EventMouse) {
 		mouseEvent.x = x - offsetX
 		mouseEvent.y = y - offsetY
         if currentTargetWidget.HandleMouseEvent(mouseEventInter) {
+        	return // cancelled
+        }
+    }
+}
+
+func (a *Application) handleKeyEvent(ev *tcell.EventKey) {
+	hitWidget := a.focusWidget
+	if hitWidget == nil {
+	    return
+	}
+
+    // Find the complete path from the root widget to this widget.
+	widgetPath := []Widget{}
+
+    ptr := hitWidget.Parent()
+    for ptr != nil {
+     	widgetPath = append(widgetPath, ptr)
+      	ptr = ptr.Parent();
+    }
+
+    keyEvent := keyEventImpl{
+     	targetWidget: hitWidget,
+        	sourceEvent: ev,
+    }
+    var keyEventInter KeyEvent = &keyEvent
+
+    // Perform a DOM event style 'capture' phase on each widget on the path.
+    keyEvent.phase = EVENT_PHASE_CAPTURE
+    for i, _ := range widgetPath {
+     	currentTargetWidget := widgetPath[len(widgetPath) -1 -i]
+        if currentTargetWidget.HandleKeyEvent(keyEventInter) {
+        	return	// cancelled
+        }
+    }
+
+    keyEvent.phase = EVENT_PHASE_TARGET
+    if hitWidget.HandleKeyEvent(keyEventInter) {
+     	return // cancelled
+    }
+
+    // Now the bubble phase
+    keyEvent.phase = EVENT_PHASE_BUBBLE
+    for _, currentTargetWidget := range widgetPath {
+        if currentTargetWidget.HandleKeyEvent(keyEventInter) {
         	return // cancelled
         }
     }

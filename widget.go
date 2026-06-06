@@ -19,6 +19,12 @@ type MouseEvent interface {
 	TargetWidget() Widget
 }
 
+type KeyEvent interface {
+	SourceEvent() *tcell.EventKey
+	Phase() EventPhase
+	TargetWidget() Widget
+}
+
 
 type Widget interface {
 	// The name of this widget.
@@ -65,16 +71,14 @@ type Widget interface {
 	// Returns true if event handling should be stopped.
 	HandleMouseEvent(mouseEvent MouseEvent) bool
 
+    // Handle a key event
+    //
+    // Returns true if event handling should be stopped.
+	HandleKeyEvent(keyEvent KeyEvent) bool
+
 	// Set whether the widget is visible or hidden
 	SetVisible(visible bool)
 
 	// True if the widget is visible
 	IsVisible() bool
-
-
-	HasFocus() bool
-
-	Focus()
-
-	IsOnFocusPath() bool
 }

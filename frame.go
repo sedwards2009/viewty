@@ -76,13 +76,13 @@ func (f *Frame) Render(painter Painter) {
 	blCornerRune := '\u2514'
 	brCornerRune := '\u2518'
 
-	if f.IsOnFocusPath() {
-		horizLineRune += 0x50
-		vertLineRune  += 0x50
-		tlCornerRune  += 0x50
-		trCornerRune  += 0x50
-		blCornerRune  += 0x50
-		brCornerRune  += 0x50
+	if app.IsWidgetOnFocusPath(f) {
+		horizLineRune = '\u2550'
+		vertLineRune  = '\u2551'
+		tlCornerRune  = '\u2554'
+		trCornerRune  = '\u2557'
+		blCornerRune  = '\u255A'
+		brCornerRune  = '\u255D'
 	}
 
 	FillRect(painter, 0, 0, f.width, 1, horizLineRune, style)
