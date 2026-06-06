@@ -16,8 +16,11 @@ type Application struct {
 	focusWidget Widget
 }
 
+var app *Application
+
 func NewApplication() *Application {
-	return &Application{}
+	app = &Application{}
+	return app
 }
 
 func (a *Application) EnableLogging(on bool) {
@@ -26,6 +29,28 @@ func (a *Application) EnableLogging(on bool) {
 
 func (a *Application) SetRootWidget(widget Widget) {
 	a.rootWidget = widget
+}
+
+func (a *Application) Focus(widget Widget) {
+	a.focusWidget = widget
+}
+
+func (a *Application) GetFocusWidget() Widget {
+	return a.focusWidget
+}
+
+func (a *Application) IsWidgetOnFocusPath(widget Widget) bool {
+	if a.focusWidget == nil {
+		return false
+	}
+	currentWidget := a.focusWidget
+	for currentWidget != nil {
+		if widget == currentWidget {
+			return true
+		}
+		currentWidget = currentWidget.Parent()
+	}
+	return false
 }
 
 func (a *Application) Run() {

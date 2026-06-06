@@ -65,8 +65,16 @@ type Widget interface {
 	// Returns true if event handling should be stopped.
 	HandleMouseEvent(mouseEvent MouseEvent) bool
 
+	// Set whether the widget is visible or hidden
+	SetVisible(visible bool)
+
+	// True if the widget is visible
+	IsVisible() bool
+
+
+	HasFocus() bool
+
 	Focus()
 
-	SetVisible(visible bool)
-	IsVisible() bool
+	IsOnFocusPath() bool
 }

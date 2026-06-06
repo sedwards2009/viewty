@@ -45,6 +45,7 @@ func (f *Frame) Padding() int {
 
 func (f *Frame) SetContentWidget(contentWidget Widget) {
 	f.contentWidget = contentWidget
+	contentWidget.SetParent(f)
 }
 
 func (f *Frame) Reposition(x int, y int, width int, height int) {
@@ -58,8 +59,9 @@ func (f *Frame) Reposition(x int, y int, width int, height int) {
 
 func (f *Frame) Render(painter Painter) {
 	if f.contentWidget != nil {
-		_, _, width, height := f.contentWidget.Position()
-		f.contentWidget.Render(painter.Translate(f.padding, f.padding).ApplyClipArea(0, 0, width, height))
+		x, y, width, height := f.contentWidget.Position()
+		frameWidth := 1
+		f.contentWidget.Render(painter.Translate(frameWidth+x, frameWidth+y).ApplyClipArea(0, 0, width, height))
 	}
 
 	var White = tcell.NewHexColor(0xf3f3f3).TrueColor()
@@ -67,26 +69,59 @@ func (f *Frame) Render(painter Painter) {
 
 	style := tcell.StyleDefault.Foreground(White).Background(Black)
 
-	painter.SetContent(0, 0, 'X', nil, style)
+	horizLineRune := '\u2500'
+	vertLineRune := '\u2502'
+	tlCornerRune := '\u250C'
+	trCornerRune := '\u2510'
+	blCornerRune := '\u2514'
+	brCornerRune := '\u2518'
 
-	FillRect(painter, 0, 0, f.width, 1, '\u2500', style)
-	FillRect(painter, 0, f.height-1, f.width, 1, '\u2500', style)
-	FillRect(painter, 0, 0, 1, f.height, '\u2502', style)
-	FillRect(painter, f.width-1, 0, 1, f.height, '\u2502', style)
+	if f.IsOnFocusPath() {
+		horizLineRune += 0x50
+		vertLineRune  += 0x50
+		tlCornerRune  += 0x50
+		trCornerRune  += 0x50
+		blCornerRune  += 0x50
+		brCornerRune  += 0x50
+	}
+
+	FillRect(painter, 0, 0, f.width, 1, horizLineRune, style)
+	FillRect(painter, 0, f.height-1, f.width, 1, horizLineRune, style)
+	FillRect(painter, 0, 0, 1, f.height, vertLineRune, style)
+	FillRect(painter, f.width-1, 0, 1, f.height, vertLineRune, style)
 
 	// 0x250C BOX DRAWINGS LIGHT DOWN AND RIGHT
-	painter.SetContent(0, 0, '\u250C', nil, style)
+	painter.SetContent(0, 0, tlCornerRune, nil, style)
 
 	// 0x2510 BOX DRAWINGS LIGHT DOWN AND LEFT
-	painter.SetContent(f.width -1, 0, '\u2510', nil, style)
+	painter.SetContent(f.width -1, 0, trCornerRune, nil, style)
 
 	// 0x2514 BOX DRAWINGS LIGHT UP AND RIGHT
-	painter.SetContent(0, f.height-1, '\u2514', nil, style)
+	painter.SetContent(0, f.height-1, blCornerRune, nil, style)
 
 	// 0x2518 BOX DRAWINGS LIGHT UP AND LEFT
-	painter.SetContent(f.width-1, f.height-1, '\u2518', nil, style)
+	painter.SetContent(f.width-1, f.height-1, brCornerRune, nil, style)
 
 	if f.title != "" {
 		PrintString(painter, 1, 0, style, f.title)
 	}
+}
+
+func (f *Frame) ChildWidgetAt(x int, y int) Widget {
+	if f.contentWidget == nil {
+		return nil
+	}
+
+	myX, myY, _, _ := f.Position()
+	childX := x - myX
+	childY := y - myY
+
+	if f.contentWidget.ContainsPoint(childX, childY) {
+		childWidget := f.contentWidget.ChildWidgetAt(childX, childY)
+		if childWidget != nil {
+			return childWidget
+		}
+		return f.contentWidget
+    }
+	return nil
 }

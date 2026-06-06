@@ -22,6 +22,7 @@ func main() {
     Yellow := tcell.NewHexColor(0xcece00).TrueColor()
 
     leftVFlex := tt.NewVFlex()
+    leftVFlex.SetName("leftVFlex")
 
     blueBox := tt.NewBox()
     blueBox.SetName("BlueBox")
@@ -31,12 +32,13 @@ func main() {
 	scrollArea := tt.NewScrollArea()
 
 	scrollContent := tt.NewHFlex()
+	scrollContent.SetName("scrollContent")
     redBox := tt.NewBox()
     redBox.SetName("RedBox")
     redBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Red))
     scrollContent.AddWidget(redBox, 0, 1)
 
-    greenBox := tt.NewBox()
+    greenBox := tt.NewDotBox()
     greenBox.SetName("GreenBox")
     greenBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Green))
     scrollContent.AddWidget(greenBox, 0, 1)
@@ -64,11 +66,13 @@ func main() {
 
 	buttonFlex := tt.NewHFlex()
 	buttonFlex.SetGapSize(1)
+	buttonFlex.SetName("ButtonFlex")
 	buttonFlex.AddWidget(scrollLeftButton, 0, 1)
     buttonFlex.AddWidget(scrollRightButton, 0, 1)
     leftVFlex.AddWidget(buttonFlex, 1, 0)
 
 	vFlex := tt.NewVFlex()
+	vFlex.SetName("vFlex")
 	vFlex.SetGapSize(1)
 
 	whiteBox := tt.NewDotBox()
@@ -77,6 +81,7 @@ func main() {
 	vFlex.AddWidget(whiteBox, 10, 1)
 
 	frame := tt.NewFrame()
+	frame.SetName("frame")
 	frame.SetTitle("A Frame")
 	vFlex.AddWidget(frame, 10, 1)
 
@@ -88,7 +93,7 @@ func main() {
 		clickCount++
 		button.SetText(fmt.Sprintf("Button clicks: %d", clickCount))
 	})
-	vFlex.AddWidget(button, 1, 0)
+	frame.SetContentWidget(button)
 
 	rootFlexH.AddWidget(leftVFlex, 10, 2)
 	rootFlexH.AddWidget(vFlex, 10, 1)

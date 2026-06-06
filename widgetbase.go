@@ -64,7 +64,6 @@ func (w *WidgetBase) HandleMouseEvent(mouseEvent MouseEvent) bool {
 	return false
 }
 
-func (w *WidgetBase) Focus() {}
 
 func (w *WidgetBase) SetVisible(visible bool) {
 	w.visible = visible
@@ -72,4 +71,17 @@ func (w *WidgetBase) SetVisible(visible bool) {
 
 func (w *WidgetBase) IsVisible() bool {
 	return w.visible
+}
+
+
+func (w *WidgetBase) HasFocus() bool {
+  return app.GetFocusWidget() == w
+}
+
+func (w *WidgetBase) Focus() {
+	app.Focus(w)
+}
+
+func (w *WidgetBase) IsOnFocusPath() bool {
+	return app.IsWidgetOnFocusPath(w)
 }

@@ -36,21 +36,20 @@ func (b *Button) Id() string {
 func (b *Button) Render(painter Painter) {
 	_, _, w, h := b.Position()
 
-	var White = tcell.NewHexColor(0xf3f3f3).TrueColor()
-    var Green = tcell.NewHexColor(0x0b835c).TrueColor()
-
-	buttonStyle := tcell.StyleDefault.Foreground(White).Background(Green)
-
-	for i := range h {
-		for j := range w {
-			painter.SetContent(j, i, ' ', nil, buttonStyle)
-		}
+	var foreground = tcell.NewHexColor(0xf3f3f3).TrueColor()
+    var background = tcell.NewHexColor(0x0b835c).TrueColor()
+    if b.HasFocus() {
+    	background = tcell.NewHexColor(0xf30000).TrueColor()
 	}
+
+	buttonStyle := tcell.StyleDefault.Foreground(foreground).Background(background)
+	ClearRect(painter, 0, 0, w, h, buttonStyle)
 	PrintCenteredString(painter, 0, 0, b.width, buttonStyle, b.text)
 }
 
 func (b *Button) HandleMouseEvent(mouseEvent MouseEvent) bool {
 	if mouseEvent.SourceEvent().Buttons() == tcell.Button1 && b.onClick != nil {
+		b.Focus()
 		b.onClick(b.id)
 	}
 	return false
