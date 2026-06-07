@@ -31,11 +31,9 @@ func NewTextEditor(buffer *buffer.Buffer) *TextEditor {
 	}
 	v.outerThis = v
 
-	// buffer.RegisterRedrawCallback(func() {
-	// 	app.QueueUpdateDraw(func() {
-	// 		// Just trigger a redraw of the buffer window
-	// 	})
-	// })
+	buffer.RegisterRedrawCallback(func() {
+	  app.ForceRender()
+	})
 
 	v.bufPane = action.NewBufPane(v.buffer, v.bufWindow)
 	v.buffer.UpdateRules()

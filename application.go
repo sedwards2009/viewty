@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync/atomic"
 
 	tcell "github.com/gdamore/tcell/v2"
 )
@@ -12,6 +13,7 @@ type Application struct {
 	screen        tcell.Screen
 	rootWidget    Widget
 	enableLogging bool
+	forceRender   atomic.Bool
 
 	focusWidget Widget
 }
@@ -25,6 +27,10 @@ func NewApplication() *Application {
 
 func (a *Application) EnableLogging(on bool) {
 	a.enableLogging = on
+}
+
+func (a *Application) ForceRender() {
+	a.forceRender.Store(true)
 }
 
 func (a *Application) SetRootWidget(widget Widget) {
@@ -107,6 +113,11 @@ func (a *Application) Run() {
 		case *tcell.EventMouse:
 			a.handleMouseEvent(ev)
 			a.rerender()
+		}
+
+		if a.forceRender.Load() {
+			a.rerender()
+			a.forceRender.Store(false)
 		}
 	}
 }
