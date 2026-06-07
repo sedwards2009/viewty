@@ -15,6 +15,7 @@ type Painter interface {
     Translate(tX int, tY int) Painter
     ApplyClipArea(x int, y int, width int, height int) Painter
     IsVisible() bool
+    Screen() tcell.Screen
 }
 
 type PainterImpl struct {
@@ -60,6 +61,10 @@ func (p *PainterImpl) Size() (width, height int) {
 
 func (p *PainterImpl) IsVisible() bool {
 	return p.clipWidth != 0 && p.clipHeight != 0
+}
+
+func (p *PainterImpl) Screen() tcell.Screen {
+    return p.screen
 }
 
 func (p *PainterImpl) Translate(translateX int, translateY int) Painter {
