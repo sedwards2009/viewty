@@ -1,7 +1,6 @@
 package viewty
 
 import (
-	"log"
 	"github.com/gdamore/tcell/v2"
 )
 
