@@ -1,4 +1,4 @@
-package termtronic
+package viewty
 
 import (
 	tcell "github.com/gdamore/tcell/v2"

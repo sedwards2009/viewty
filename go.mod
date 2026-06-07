@@ -1,4 +1,4 @@
-module github.com/sedwards2009/termtronic
+module github.com/sedwards2009/viewty
 
 go 1.25.1
 

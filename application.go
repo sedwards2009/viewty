@@ -1,4 +1,4 @@
-package termtronic
+package viewty
 
 import (
 	"io"
@@ -220,7 +220,7 @@ func (a *Application) handleKeyEvent(ev *tcell.EventKey) {
 }
 
 func (a *Application) setupLogging() *os.File {
-	logFile, err := os.OpenFile("termtronic.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+	logFile, err := os.OpenFile("viewty.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
 		panic("Failed to open log file: " + err.Error())
 	}

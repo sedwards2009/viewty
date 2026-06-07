@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	tcell "github.com/gdamore/tcell/v2"
-	tt "github.com/sedwards2009/termtronic"
+	tt "github.com/sedwards2009/viewty"
 )
 
 func main() {

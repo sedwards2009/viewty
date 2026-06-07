@@ -5,6 +5,6 @@ tasks:
     desc: Build and run the demo
     dir: demos/demo
     cmds:
-      - go build -o ../bin/termtronic
-      - ../bin/termtronic
-      - cat termtronic.log
+      - go build -o ../bin/viewty
+      - ../bin/viewty
+      - cat viewty.log

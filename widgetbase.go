@@ -1,4 +1,4 @@
-package termtronic
+package viewty
 
 
 type WidgetBase struct {
