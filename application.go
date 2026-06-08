@@ -4,7 +4,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"sync/atomic"
 
 	tcell "github.com/gdamore/tcell/v2"
 )
@@ -13,7 +12,7 @@ type Application struct {
 	screen        tcell.Screen
 	rootWidget    Widget
 	enableLogging bool
-	forceRender   atomic.Bool
+	forceRenderChannel chan bool
 
 	focusWidget Widget
 }
@@ -21,7 +20,9 @@ type Application struct {
 var app *Application
 
 func NewApplication() *Application {
-	app = &Application{}
+	app = &Application{
+        forceRenderChannel: make(chan bool, 100),
+	}
 	return app
 }
 
@@ -30,7 +31,7 @@ func (a *Application) EnableLogging(on bool) {
 }
 
 func (a *Application) ForceRender() {
-	a.forceRender.Store(true)
+	a.forceRenderChannel <- true
 }
 
 func (a *Application) SetRootWidget(widget Widget) {
@@ -74,11 +75,6 @@ func (a *Application) Run() {
 	a.screen.EnableMouse()
 	a.screen.Clear()
 
-	quit := func() {
-		a.screen.Fini()
-		os.Exit(0)
-	}
-
 	var logFile *os.File
 	if a.enableLogging {
 		logFile = a.setupLogging()
@@ -89,36 +85,46 @@ func (a *Application) Run() {
 		log.SetOutput(io.Discard)
 	}
 
+	tcellEvents := make(chan tcell.Event)
+	quitChannel := make(chan struct{}, 1)
+
+	go func() {
+	    a.screen.ChannelEvents(tcellEvents, quitChannel)
+	}()
+
 	for {
 		// Update screen
 		a.screen.Show()
 
-		ev := a.screen.PollEvent()
+        select {
+            case ev := <-tcellEvents:
+          		// Process event
+          		switch ev := ev.(type) {
+          		case *tcell.EventResize:
+         			width, height := ev.Size()
+         			log.Printf("Resize(%d, %d)\n", width, height)
+         			a.rootWidget.Reposition(0, 0, width, height)
+         			a.rerender()
+         			a.screen.Sync()
 
-		// Process event
-		switch ev := ev.(type) {
-		case *tcell.EventResize:
-			width, height := ev.Size()
-			log.Printf("Resize(%d, %d)\n", width, height)
-			a.rootWidget.Reposition(0, 0, width, height)
-			a.rerender()
-			a.screen.Sync()
-		case *tcell.EventKey:
-			if ev.Key() == tcell.KeyEscape || ev.Key() == tcell.KeyCtrlC {
-				quit()
-			} else {
-			    a.handleKeyEvent(ev)
-				a.rerender()
-			}
-		case *tcell.EventMouse:
-			a.handleMouseEvent(ev)
-			a.rerender()
-		}
+          		case *tcell.EventKey:
+         			if ev.Key() == tcell.KeyEscape || ev.Key() == tcell.KeyCtrlC {
+                        quitChannel <- struct{}{}
+                        a.screen.Fini()
+                        os.Exit(0)
+         			} else {
+         			    a.handleKeyEvent(ev)
+            			a.rerender()
+         			}
 
-		if a.forceRender.Load() {
-			a.rerender()
-			a.forceRender.Store(false)
-		}
+          		case *tcell.EventMouse:
+         			a.handleMouseEvent(ev)
+         			a.rerender()
+          		}
+
+            case <-a.forceRenderChannel:
+     			a.rerender()
+        }
 	}
 }
 
