@@ -40,7 +40,9 @@ func (f *Flex) AddWidget(widget Widget, fixed int, proportion int) {
 	}
 
     f.items = append(f.items, item)
-    widget.SetParent(f)
+    if widget != nil {
+        widget.SetParent(f)
+    }
 }
 
 func (f *Flex) Reposition(x int, y int, width int, height int) {
@@ -49,12 +51,16 @@ func (f *Flex) Reposition(x int, y int, width int, height int) {
 	if f.vertical {
 		yList, heightList := layout(height, f.gapSize, f.items)
 		for i, item := range f.items {
-			item.widget.Reposition(0, yList[i], width, heightList[i])
+		    if item.widget != nil {
+				item.widget.Reposition(0, yList[i], width, heightList[i])
+			}
 		}
 	} else {
 		xList, widthList := layout(width, f.gapSize, f.items)
 		for i, item := range f.items {
-			item.widget.Reposition(xList[i], 0, widthList[i], height)
+		    if item.widget != nil {
+				item.widget.Reposition(xList[i], 0, widthList[i], height)
+			}
 		}
 	}
 }
@@ -64,7 +70,7 @@ func layout(size int, gapSize int, items []flexItem) ([]int, []int) {
 	fixedSize := 0
 	proportionDenominator := 0
 	for _, item := range items {
-		if item.widget.IsVisible() {
+		if item.widget == nil || item.widget.IsVisible() {
 			fixedSize += item.fixed
 			proportionDenominator += item.proportion
 		}
@@ -80,14 +86,14 @@ func layout(size int, gapSize int, items []flexItem) ([]int, []int) {
 	x := 0
 	for _, item := range items {
 		width := 0
-		if item.widget.IsVisible() {
+		if item.widget == nil || item.widget.IsVisible() {
 			width = item.fixed + item.proportion * remaining / proportionDenominator
 		}
 
 		xList = append(xList, x)
 		widthList = append(widthList, width)
 
-		if item.widget.IsVisible() {
+		if item.widget == nil || item.widget.IsVisible() {
 			x += width
 			x += gapSize
 		}
@@ -97,7 +103,7 @@ func layout(size int, gapSize int, items []flexItem) ([]int, []int) {
 
 func (f *Flex) Render(painter Painter) {
 	for _, item := range f.items {
-		if item.widget.IsVisible() {
+		if item.widget != nil && item.widget.IsVisible() {
 			x, y, width, height := item.widget.Position()
 			clippedPainter := painter.Translate(x, y).ApplyClipArea(0, 0, width, height)
 			if clippedPainter.IsVisible() {
@@ -112,7 +118,7 @@ func (f *Flex) ChildWidgetAt(x int, y int) Widget {
 	childX := x - myX
 	childY := y - myY
 	for _, item := range f.items {
-		if item.widget.IsVisible() && item.widget.ContainsPoint(childX, childY) {
+		if item.widget != nil && item.widget.IsVisible() && item.widget.ContainsPoint(childX, childY) {
 			childWidget := item.widget.ChildWidgetAt(childX, childY)
 			if childWidget != nil {
 				return childWidget
