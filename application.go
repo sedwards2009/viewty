@@ -10,10 +10,9 @@ import (
 
 type Application struct {
 	screen        tcell.Screen
-	rootWidget    Widget
+	layers        []Widget
 	enableLogging bool
 	forceRenderChannel chan bool
-
 	focusWidget Widget
 }
 
@@ -34,8 +33,24 @@ func (a *Application) ForceRender() {
 	a.forceRenderChannel <- true
 }
 
-func (a *Application) SetRootWidget(widget Widget) {
-	a.rootWidget = widget
+func (a *Application) AddLayerWidget(widget Widget) {
+	a.layers = append(a.layers, widget)
+	if a.screen != nil {
+    	width, height := a.screen.Size()
+    	widget.Reposition(0, 0, width, height)
+	}
+}
+
+func (a *Application) RemoveLayerWidget(widget Widget) {
+	for i, w := range a.layers {
+		if w == widget {
+			a.layers = append(a.layers[:i], a.layers[i+1:]...)
+			if a.IsWidgetOnFocusPath(widget) {
+				a.focusWidget = nil
+			}
+			return
+		}
+	}
 }
 
 func (a *Application) Focus(widget Widget) {
@@ -61,7 +76,7 @@ func (a *Application) IsWidgetOnFocusPath(widget Widget) bool {
 }
 
 func (a *Application) Run() {
-	if a.rootWidget == nil {
+	if len(a.layers) == 0 {
 		log.Fatalf("No root widget set on the application")
 	}
 
@@ -92,10 +107,10 @@ func (a *Application) Run() {
 	    a.screen.ChannelEvents(tcellEvents, quitChannel)
 	}()
 
+	a.screen.Show()
+	a.rerender()
 	for {
-		// Update screen
-		a.screen.Show()
-
+    	a.screen.Show()
         select {
             case ev := <-tcellEvents:
           		// Process event
@@ -103,7 +118,10 @@ func (a *Application) Run() {
           		case *tcell.EventResize:
          			width, height := ev.Size()
          			log.Printf("Resize(%d, %d)\n", width, height)
-         			a.rootWidget.Reposition(0, 0, width, height)
+                    for _, w := range a.layers {
+                        w.Reposition(0, 0, width, height)
+                    }
+
          			a.rerender()
          			a.screen.Sync()
 
@@ -130,12 +148,25 @@ func (a *Application) Run() {
 
 func (a *Application) rerender() {
 	a.screen.Clear()
-	a.rootWidget.Render(NewPainter(a.screen))
+	for _, w := range a.layers {
+	    w.Render(NewPainter(a.screen))
+	}
+}
+
+func (a *Application) findWidgetPath(hitWidget Widget) []Widget {
+	widgetPath := []Widget{}
+
+	ptr := hitWidget.Parent()
+	for ptr != nil {
+		widgetPath = append(widgetPath, ptr)
+		ptr = ptr.Parent()
+	}
+	return widgetPath
 }
 
 func (a *Application) handleMouseEvent(ev *tcell.EventMouse) {
 	x, y := ev.Position()
-	hitWidget := a.rootWidget
+	hitWidget := a.layers[len(a.layers)-1]
 	childHitWidget := hitWidget.ChildWidgetAt(x, y)
 	if childHitWidget != nil {
 		hitWidget = childHitWidget
@@ -145,14 +176,7 @@ func (a *Application) handleMouseEvent(ev *tcell.EventMouse) {
 		return
 	}
 
-    // Find the complete path from the root widget to this widget.
-	widgetPath := []Widget{}
-
-    ptr := hitWidget.Parent()
-    for ptr != nil {
-    	widgetPath = append(widgetPath, ptr)
-     	ptr = ptr.Parent();
-    }
+	widgetPath := a.findWidgetPath(hitWidget)
 
     mouseEvent := mouseEventImpl{
     	targetWidget: hitWidget,
@@ -198,14 +222,7 @@ func (a *Application) handleKeyEvent(ev *tcell.EventKey) {
 	    return
 	}
 
-    // Find the complete path from the root widget to this widget.
-	widgetPath := []Widget{}
-
-    ptr := hitWidget.Parent()
-    for ptr != nil {
-     	widgetPath = append(widgetPath, ptr)
-      	ptr = ptr.Parent();
-    }
+	widgetPath := a.findWidgetPath(hitWidget)
 
     keyEvent := keyEventImpl{
      	targetWidget: hitWidget,

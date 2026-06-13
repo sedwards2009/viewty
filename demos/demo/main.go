@@ -29,6 +29,17 @@ func main() {
 	blueBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Blue))
 	leftVFlex.AddWidget(blueBox, 0, 1)
 
+	dialogButton := viewty.NewButton()
+	dialogButton.SetText("Dialog Test")
+	var dialog viewty.Widget
+	dialogButton.SetOnClick(func(id string) {
+	    dialog = MakeDialog(func() {
+					app.RemoveLayerWidget(dialog)
+				})
+		app.AddLayerWidget(dialog)
+	})
+	leftVFlex.AddWidget(dialogButton, 1, 0)
+
 	textInput := viewty.NewTextInput()
 	textInput.SetText("TextInput")
 	leftVFlex.AddWidget(textInput, 1, 0)
@@ -102,7 +113,28 @@ func main() {
 	rootFlexH.AddWidget(leftVFlex, 10, 2)
 	rootFlexH.AddWidget(vFlex, 10, 1)
 
-	app.SetRootWidget(rootFlexH)
+	app.AddLayerWidget(rootFlexH)
 
     app.Run()
+}
+
+func MakeDialog(onOk func()) viewty.Widget {
+    hFlex := viewty.NewHFlex()
+    hFlex.AddWidget(nil, 0, 10)
+
+    vFlex := viewty.NewVFlex()
+    vFlex.AddWidget(nil, 0, 10)
+
+    okButton := viewty.NewButton()
+    okButton.SetText("OK, close dialog")
+    okButton.SetOnClick(func(id string) {onOk()})
+    vFlex.AddWidget(okButton, 1, 80)
+
+    vFlex.AddWidget(nil, 0, 10)
+
+    hFlex.AddWidget(vFlex, 0, 80)
+
+    hFlex.AddWidget(nil, 0, 10)
+
+    return hFlex
 }

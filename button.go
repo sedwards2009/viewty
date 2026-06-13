@@ -48,9 +48,11 @@ func (b *Button) Render(painter Painter) {
 }
 
 func (b *Button) HandleMouseEvent(mouseEvent MouseEvent) bool {
-	if mouseEvent.SourceEvent().Buttons() == tcell.Button1 && b.onClick != nil {
-		app.Focus(b)
-		b.onClick(b.id)
+    if mouseEvent.SourceEvent().Buttons() == tcell.Button1 {
+        app.Focus(b)
+	    if b.onClick != nil {
+			b.onClick(b.id)
+		}
 	}
 	return false
 }
