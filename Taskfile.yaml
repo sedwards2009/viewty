@@ -8,3 +8,8 @@ tasks:
       - go build -o ../bin/viewty
       - ../bin/viewty
       - cat viewty.log
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test -v -cover

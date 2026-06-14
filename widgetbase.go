@@ -2,13 +2,14 @@ package viewty
 
 
 type WidgetBase struct {
-	parent  Widget
-	name    string
-	x       int
-	y       int
-	width   int
-	height  int
-	visible bool
+	parent    Widget
+	name      string
+	x         int
+	y         int
+	width     int
+	height    int
+	visible   bool
+	styleFunc StyleFunc
 }
 
 func NewWidgetBase() *WidgetBase {
@@ -74,4 +75,21 @@ func (w *WidgetBase) SetVisible(visible bool) {
 
 func (w *WidgetBase) IsVisible() bool {
 	return w.visible
+}
+
+func (w *WidgetBase) GetStyle(widgetType string, class []string) StyleMap {
+	parent := w.Parent()
+	if parent == nil {
+		return make(map[string]any)
+	}
+	parentStyle := parent.GetStyle(widgetType, class)
+
+	if w.styleFunc == nil {
+		return parentStyle
+	}
+	return w.styleFunc(parentStyle, widgetType, class)
+}
+
+func (w WidgetBase) SetStyleFunc(styleFunc StyleFunc) {
+	w.styleFunc = styleFunc
 }

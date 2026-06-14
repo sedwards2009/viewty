@@ -25,6 +25,8 @@ type KeyEvent interface {
 	TargetWidget() Widget
 }
 
+type StyleMap = map[string]any
+type StyleFunc = func(base StyleMap, widgeType string, class []string) StyleMap
 
 type Widget interface {
 	// The name of this widget.
@@ -81,4 +83,8 @@ type Widget interface {
 
 	// True if the widget is visible
 	IsVisible() bool
+
+	GetStyle(widgetType string, class []string) StyleMap
+
+	SetStyleFunc(styleFunc StyleFunc)
 }
