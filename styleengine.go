@@ -2,18 +2,20 @@ package viewty
 
 import (
 	"encoding/json"
+	"fmt"
 	"maps"
 )
 
 type styleRule struct {
-	Selector    string            `json:"selector"`
-	Styles      StyleMap          `json:"styles"`
-	InheritsFrom string            `json:"from,omitempty"`
+	Selector       string   `json:"selector"`
+	InputStyles    StyleMap `json:"styles"`
+	InheritsFrom   string   `json:"from,omitempty"`
+	ExpandedStyles StyleMap
 }
 
 type StyleBuilder struct {
 	defaultStyles StyleMap
-	widgetRules   []styleRule
+	rules   []*styleRule
 }
 
 func NewStyleBuilder() *StyleBuilder {
@@ -28,51 +30,103 @@ func (b *StyleBuilder) SetDefaultStyles(styles StyleMap) *StyleBuilder {
 func (b *StyleBuilder) AddWidgetRule(selector string, styles StyleMap, inheritsFrom ...string) *StyleBuilder {
 	rule := styleRule{
 		Selector:   selector,
-		Styles:     styles,
-		InheritsFrom: inheritsFrom[0],
+		InputStyles:     styles,
 	}
-	b.widgetRules = append(b.widgetRules, rule)
+	if len(inheritsFrom) != 0 {
+		rule.InheritsFrom = inheritsFrom[0]
+	}
+	b.rules = append(b.rules, &rule)
 	return b
 }
 
 func (b *StyleBuilder) LoadJSON(config string) error {
-	var rules []styleRule
-	if err := json.Unmarshal([]byte(config), &rules); err != nil {
+	var ruleMap map[string]any
+	if err := json.Unmarshal([]byte(config), &ruleMap); err != nil {
 		return err
 	}
 
-	for _, rule := range rules {
-		if rule.Selector == "*" {
-			b.defaultStyles = rule.Styles
-		} else if rule.Selector != "" {
-			b.widgetRules = append(b.widgetRules, rule)
+	for selector, value := range ruleMap {
+		if valueMap, ok := value.(map[string]any); ok {
+			var inheritsFrom string
+			if inherits, ok := valueMap["from"].(string); ok {
+				inheritsFrom = inherits
+			}
+
+			rule := &styleRule{
+				Selector:   selector,
+				InputStyles:     make(StyleMap),
+				InheritsFrom: inheritsFrom,
+			}
+			rule.InputStyles = valueMap
+
+			if selector == "*" {
+				b.defaultStyles = rule.InputStyles
+			} else if selector != "" {
+				b.rules = append(b.rules, rule)
+			}
 		}
 	}
 
 	return nil
 }
 
-func (b *StyleBuilder) Build() (StyleFunc, error) {
-	var rules []styleRule
-	for _, rule := range b.widgetRules {
-		rules = append(rules, rule)
+func (b *StyleBuilder) computeAllStyles() {
+	for _, rule := range b.rules {
+		rule.ExpandedStyles = make(StyleMap)
+	}
+	for _, rule := range b.rules {
+		err := b.computeStyleRule(rule, len(b.rules)+1)
+		if err != nil {
+			fmt.Printf("%v\n", err)
+		}
+	}
+}
+
+func (b *StyleBuilder) computeStyleRule(rule *styleRule, recursionLimit int) error {
+	if recursionLimit == 0 {
+		return fmt.Errorf("Recursion loop detected")
+	}
+	if len(rule.ExpandedStyles) >= len(rule.InputStyles) {
+		return nil	// Already updated
 	}
 
-	return func(base StyleMap, widgeType string, class []string) StyleMap {
+	if rule.InheritsFrom == "" {
+		maps.Copy(rule.ExpandedStyles, b.defaultStyles)
+	} else {
+		parentRule := b.getRuleBySelector(rule.InheritsFrom)
+		if parentRule == nil {
+			return fmt.Errorf("Couldn't find style rule with name '%s'.", rule.InheritsFrom)
+		}
+		err := b.computeStyleRule(parentRule, recursionLimit-1)
+		if err != nil {
+			return err
+		}
+		maps.Copy(rule.ExpandedStyles, parentRule.ExpandedStyles)
+	}
+	maps.Copy(rule.ExpandedStyles, rule.InputStyles)
+
+	return nil
+}
+
+func (b *StyleBuilder) getRuleBySelector(selector string) *styleRule {
+  for _, rule := range b.rules {
+    if rule.Selector == selector {
+      return rule
+    }
+  }
+  return nil
+}
+
+func (b *StyleBuilder) Build() (StyleFunc, error) {
+	b.computeAllStyles()
+
+	return func(base StyleMap, widgetType string, class []string) StyleMap {
 		result := make(StyleMap)
 		maps.Copy(result, base)
-		maps.Copy(result, b.defaultStyles)
 
-		for _, rule := range rules {
-			if rule.InheritsFrom != "" {
-				parent := result[rule.InheritsFrom]
-				if parentMap, ok := parent.(StyleMap); ok {
-					maps.Copy(result, parentMap)
-				}
-			}
-			if rule.Selector == widgeType {
-				maps.Copy(result, rule.Styles)
-			}
+		rule := b.getRuleBySelector(widgetType)
+		if rule != nil {
+			maps.Copy(result, rule.ExpandedStyles)
 		}
 		return result
 	}, nil

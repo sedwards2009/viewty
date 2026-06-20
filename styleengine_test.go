@@ -22,7 +22,6 @@ func TestLoadStyleRulesJSON(t *testing.T) {
 	assert.NotNil(t, styleFunc)
 
 	result := styleFunc(nil, "Button", nil)
-	assert.Equal(t, "#ffffff", result["foregroundColor"])
 	assert.Equal(t, "#000000", result["backgroundColor"])
 	assert.Equal(t, "#ff0000", result["foregroundColor"])
 }
@@ -63,8 +62,8 @@ func TestLoadStyleRulesJSONInheritance(t *testing.T) {
 	assert.NotNil(t, styleFunc)
 
 	result := styleFunc(nil, "Button", nil)
-	assert.Equal(t, "#ffffff", result["foregroundColor"])
 	assert.Equal(t, "#000000", result["backgroundColor"])
+	assert.Equal(t, "#ffffff", result["foregroundColor"])
 }
 
 func TestNewStyleBuilder(t *testing.T) {
@@ -117,7 +116,6 @@ func TestStyleBuilderBuild(t *testing.T) {
 	assert.NotNil(t, styleFunc)
 
 	result := styleFunc(nil, "Button", nil)
-	assert.Equal(t, "#ffffff", result["foregroundColor"])
 	assert.Equal(t, "#000000", result["backgroundColor"])
 	assert.Equal(t, "#ff0000", result["foregroundColor"])
 }
