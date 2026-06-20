@@ -14,14 +14,32 @@ type Application struct {
 	enableLogging bool
 	forceRenderChannel chan bool
 	focusWidget Widget
+	logFile *os.File
 }
 
 var app *Application
+var defaultStyleFunc StyleFunc
 
 func NewApplication() *Application {
 	app = &Application{
         forceRenderChannel: make(chan bool, 100),
+        enableLogging: true,
 	}
+	// Load the default style
+	builder := NewStyleBuilder()
+	if err := builder.LoadJSON(defaultStyleJSON); err != nil {
+		log.Printf("Error while loading default styles: %v\n", err)
+	}
+	defaultStyleFunc, _ = builder.Build()
+
+	if app.enableLogging {
+		app.logFile = app.setupLogging()
+		log.Println("Dinky starting with logging enabled")
+	} else {
+		// Disable logging by setting output to discard
+		log.SetOutput(io.Discard)
+	}
+
 	return app
 }
 
@@ -35,6 +53,7 @@ func (a *Application) ForceRender() {
 
 func (a *Application) AddLayerWidget(widget Widget) {
 	a.layers = append(a.layers, widget)
+	widget.SetStyleFunc(defaultStyleFunc)
 	if a.screen != nil {
     	width, height := a.screen.Size()
     	widget.Reposition(0, 0, width, height)
@@ -42,6 +61,7 @@ func (a *Application) AddLayerWidget(widget Widget) {
 }
 
 func (a *Application) RemoveLayerWidget(widget Widget) {
+	widget.SetStyleFunc(nil)
 	for i, w := range a.layers {
 		if w == widget {
 			a.layers = append(a.layers[:i], a.layers[i+1:]...)
@@ -89,16 +109,6 @@ func (a *Application) Run() {
 
 	a.screen.EnableMouse()
 	a.screen.Clear()
-
-	var logFile *os.File
-	if a.enableLogging {
-		logFile = a.setupLogging()
-		defer logFile.Close()
-		log.Println("Dinky starting with logging enabled")
-	} else {
-		// Disable logging by setting output to discard
-		log.SetOutput(io.Discard)
-	}
 
 	tcellEvents := make(chan tcell.Event)
 	quitChannel := make(chan struct{}, 1)

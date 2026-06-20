@@ -13,7 +13,7 @@ func main() {
 
 	rootFlexH := viewty.NewHFlex()
 	rootFlexH.SetGapSize(1)
-	rootFlexH.SetName("Flex")
+	rootFlexH.SetName("Root Flex")
 
 	White := tcell.NewHexColor(0xf3f3f3).TrueColor()
     Blue := tcell.NewHexColor(0x007ace).TrueColor()

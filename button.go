@@ -36,13 +36,13 @@ func (b *Button) Id() string {
 func (b *Button) Render(painter Painter) {
 	_, _, w, h := b.Position()
 
-	var foreground = tcell.NewHexColor(0xf3f3f3).TrueColor()
-    var background = tcell.NewHexColor(0x0b835c).TrueColor()
-    if app.HasFocus(b) {
-    	background = tcell.NewHexColor(0xf30000).TrueColor()
+	styles := b.GetStyle("Button", []string{})
+	var buttonStyle tcell.Style
+	if app.HasFocus(b) {
+		buttonStyle = GetTCellStyle(styles, "foregroundFocusColor", "backgroundFocusColor")
+	} else {
+		buttonStyle = GetTCellStyle(styles, "foregroundColor", "backgroundColor")
 	}
-
-	buttonStyle := tcell.StyleDefault.Foreground(foreground).Background(background)
 	ClearRect(painter, 0, 0, w, h, buttonStyle)
 	PrintCenteredString(painter, 0, 0, b.width, buttonStyle, b.text)
 }

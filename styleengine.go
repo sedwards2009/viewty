@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"strings"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 type styleRule struct {
@@ -28,15 +31,27 @@ func (b *StyleBuilder) SetDefaultStyles(styles StyleMap) *StyleBuilder {
 }
 
 func (b *StyleBuilder) AddWidgetRule(selector string, styles StyleMap, inheritsFrom ...string) *StyleBuilder {
-	rule := styleRule{
+	rule := &styleRule{
 		Selector:   selector,
 		InputStyles:     styles,
 	}
 	if len(inheritsFrom) != 0 {
 		rule.InheritsFrom = inheritsFrom[0]
 	}
-	b.rules = append(b.rules, &rule)
+	b.rules = append(b.rules, rule)
+	b.parseRuleStyles(rule)
 	return b
+}
+
+func (b *StyleBuilder) parseRuleStyles(rule *styleRule) {
+	for key, value := range rule.InputStyles {
+		if strValue, ok := value.(string); ok {
+			if strings.HasSuffix(key, "Color") {
+				color := tcell.GetColor(strValue)
+				rule.InputStyles[key] = color
+			}
+		}
+	}
 }
 
 func (b *StyleBuilder) LoadJSON(config string) error {
@@ -58,7 +73,7 @@ func (b *StyleBuilder) LoadJSON(config string) error {
 				InheritsFrom: inheritsFrom,
 			}
 			rule.InputStyles = valueMap
-
+			b.parseRuleStyles(rule)
 			if selector == "*" {
 				b.defaultStyles = rule.InputStyles
 			} else if selector != "" {

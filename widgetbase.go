@@ -79,10 +79,12 @@ func (w *WidgetBase) IsVisible() bool {
 
 func (w *WidgetBase) GetStyle(widgetType string, class []string) StyleMap {
 	parent := w.Parent()
+	var parentStyle StyleMap
 	if parent == nil {
-		return make(map[string]any)
+		parentStyle = make(map[string]any)
+	} else {
+		parentStyle = parent.GetStyle(widgetType, class)
 	}
-	parentStyle := parent.GetStyle(widgetType, class)
 
 	if w.styleFunc == nil {
 		return parentStyle
@@ -90,6 +92,6 @@ func (w *WidgetBase) GetStyle(widgetType string, class []string) StyleMap {
 	return w.styleFunc(parentStyle, widgetType, class)
 }
 
-func (w WidgetBase) SetStyleFunc(styleFunc StyleFunc) {
+func (w *WidgetBase) SetStyleFunc(styleFunc StyleFunc) {
 	w.styleFunc = styleFunc
 }
