@@ -9,6 +9,13 @@ tasks:
       - ../bin/viewty
       - cat viewty.log
 
+  run-scrollbardemo:
+    dir: cmd/scrollbardemo
+    cmds:
+      - go build -o ../bin/scrollbardemo
+      - ../bin/scrollbardemo
+      - cat viewty.log
+
   test:
     desc: Run all tests
     cmds:
