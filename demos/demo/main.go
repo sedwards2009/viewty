@@ -44,6 +44,10 @@ func main() {
 	textInput.SetText("TextInput")
 	leftVFlex.AddWidget(textInput, 1, 0)
 
+	checkbox := viewty.NewCheckBox()
+	checkbox.SetLabel("This is a checkbox")
+	leftVFlex.AddWidget(checkbox, 1, 0)
+
 	scrollArea := viewty.NewScrollArea()
 
 	scrollContent := viewty.NewHFlex()
