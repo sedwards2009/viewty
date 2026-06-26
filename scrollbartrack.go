@@ -12,19 +12,21 @@ type ScrollbarTrack struct {
 	width           int
 	isHorizontal    bool
 	thin            bool
-	dragging        bool
 	beforeDrawFunc  func(screen tcell.Screen)
 	changedFunc     func(position int)
+	cover           *ScrollbarTrackCover
 }
 
 func NewScrollbarTrack() *ScrollbarTrack {
-	return &ScrollbarTrack{
+	result := &ScrollbarTrack{
 		WidgetBase: NewWidgetBase(),
 		thumbPosition: 0,
 		thumbSize:     10,
 		max:           100,
 		width:         1,
 	}
+	result.cover = newScrollbarTrackCover(result)
+	return result
 }
 
 func (s *ScrollbarTrack) SetBeforeDrawFunc(beforeDrawFunc func(screen tcell.Screen)) {
@@ -184,51 +186,14 @@ func (s *ScrollbarTrack) HandleMouseEvent(mouseEvent MouseEvent) bool {
 	event := mouseEvent.SourceEvent()
 	buttons := event.Buttons()
 
-	_, _, width, height := s.Position()
-
 	// Handle left button press (mousedown)
 	if buttons == tcell.Button1 {
 		relativeX, relativeY := mouseEvent.Position()
-		if s.isHorizontal {
-			if relativeY < 0 || relativeY >= height || relativeX < 0 || relativeX >= width {
-				return false
-			}
-			s.setPositionFromMajor(relativeX, width)
+
+		if !s.handleLeftMouse(relativeX, relativeY) {
+			return false
 		}
-
-		if !s.isHorizontal {
-			if relativeX < 0 || relativeX >= width || relativeY < 0 || relativeY >= height {
-				return false
-			}
-			s.setPositionFromMajor(relativeY, height)
-		}
-
-		s.dragging = true
-		return true
-	}
-
-	// Handle left button release (mouseup)
-	if buttons != tcell.Button1 && s.dragging {
-		s.dragging = false
-		return false
-	}
-
-	// Handle drag motion
-	if s.dragging && buttons == tcell.Button1 {
-		relativeX, relativeY := mouseEvent.Position()
-		if s.isHorizontal {
-			if relativeY < 0 || relativeY >= height || relativeX < 0 || relativeX >= width {
-				return false
-			}
-			s.setPositionFromMajor(relativeX, width)
-		}
-
-		if !s.isHorizontal {
-			if relativeX < 0 || relativeX >= width || relativeY < 0 || relativeY >= height {
-				return false
-			}
-			s.setPositionFromMajor(relativeY, height)
-		}
+		app.AddLayerWidget(s.cover)
 		return true
 	}
 
@@ -252,6 +217,24 @@ func (s *ScrollbarTrack) HandleMouseEvent(mouseEvent MouseEvent) bool {
 	}
 
 	return false
+}
+
+func (s *ScrollbarTrack) handleLeftMouse(relativeX int, relativeY int) bool {
+	_, _, width, height := s.Position()
+	if s.isHorizontal {
+		if relativeY < 0 || relativeY >= height || relativeX < 0 || relativeX >= width {
+			return false
+		}
+		s.setPositionFromMajor(relativeX, width)
+	}
+
+	if !s.isHorizontal {
+		if relativeX < 0 || relativeX >= width || relativeY < 0 || relativeY >= height {
+			return false
+		}
+		s.setPositionFromMajor(relativeY, height)
+	}
+	return true
 }
 
 // setPositionFromMajor sets the thumb position from a coordinate along the
@@ -312,4 +295,36 @@ func (s *ScrollbarTrack) drawThinHorizontal(painter Painter, x, y, width int) {
 		}
 		painter.SetContent(x+i, y, upperHalfRune, nil, style)
 	}
+}
+
+type ScrollbarTrackCover struct {
+	*WidgetBase
+	track *ScrollbarTrack
+}
+
+func newScrollbarTrackCover(track *ScrollbarTrack) *ScrollbarTrackCover {
+	return &ScrollbarTrackCover{
+		WidgetBase: NewWidgetBase(),
+		track: track,
+	}
+}
+
+func (s *ScrollbarTrackCover) HandleMouseEvent(mouseEvent MouseEvent) bool {
+	event := mouseEvent.SourceEvent()
+	buttons := event.Buttons()
+	if buttons == tcell.Button1 {
+		trackTopX, trackTopY := s.track.PointToAbs(0, 0)
+		x, y := mouseEvent.Position()
+		relativeX := x - trackTopX
+		relativeY := y - trackTopY
+		if s.track.isHorizontal {
+			relativeY = 0
+		} else {
+			relativeX = 0
+		}
+		s.track.handleLeftMouse(relativeX, relativeY)
+	} else {
+		app.RemoveLayerWidget(s)
+	}
+	return false
 }
