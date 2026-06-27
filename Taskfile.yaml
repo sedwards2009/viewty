@@ -16,6 +16,14 @@ tasks:
       - ../bin/scrollbardemo
       - cat viewty.log
 
+  run-listdemo:
+    desc: Build and run the list demo
+    dir: cmd/listdemo
+    cmds:
+      - go build -o ../bin/listdemo
+      - ../bin/listdemo
+      - cat viewty.log
+
   test:
     desc: Run all tests
     cmds:

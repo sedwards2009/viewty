@@ -13,7 +13,7 @@ type ScrollbarTrack struct {
 	isHorizontal    bool
 	thin            bool
 	beforeDrawFunc  func(screen tcell.Screen)
-	changedFunc     func(position int)
+	onChange        func(position int)
 	cover           *ScrollbarTrackCover
 }
 
@@ -41,8 +41,8 @@ func (s *ScrollbarTrack) SetThin(thin bool) {
 	s.thin = thin
 }
 
-func (s *ScrollbarTrack) SetChangedFunc(changedFunc func(position int)) {
-	s.changedFunc = changedFunc
+func (s *ScrollbarTrack) SetOnChange(changedFunc func(position int)) {
+	s.onChange = changedFunc
 }
 
 func (s *ScrollbarTrack) SetThumbPosition(position int) int {
@@ -201,8 +201,8 @@ func (s *ScrollbarTrack) HandleMouseEvent(mouseEvent MouseEvent) bool {
 	if buttons == tcell.WheelUp {
 		pos := s.thumbPosition - max(s.thumbSize/2, 1)
 		newPos := s.SetThumbPosition(pos)
-		if s.changedFunc != nil {
-			s.changedFunc(newPos)
+		if s.onChange != nil {
+			s.onChange(newPos)
 		}
 		return true
 	}
@@ -210,8 +210,8 @@ func (s *ScrollbarTrack) HandleMouseEvent(mouseEvent MouseEvent) bool {
 	if buttons == tcell.WheelDown {
 		pos := s.thumbPosition + max(s.thumbSize/2, 1)
 		newPos := s.SetThumbPosition(pos)
-		if s.changedFunc != nil {
-			s.changedFunc(newPos)
+		if s.onChange != nil {
+			s.onChange(newPos)
 		}
 		return true
 	}
@@ -253,8 +253,8 @@ func (s *ScrollbarTrack) setPositionFromMajor(eventMajorAxis, majorLength int) {
 		newPosition = s.max - s.thumbSize
 	}
 	s.thumbPosition = newPosition
-	if s.changedFunc != nil {
-		s.changedFunc(newPosition)
+	if s.onChange != nil {
+		s.onChange(newPosition)
 	}
 }
 

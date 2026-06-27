@@ -12,7 +12,7 @@ func main() {
 	app := viewty.NewApplication()
 
 	verticalScrollbar := viewty.NewScrollbar()
-	verticalScrollbar.SetChangedFunc(func(pos int) {
+	verticalScrollbar.SetOnChange(func(pos int) {
 		log.Printf("Vertical scrollbar position: %d", pos)
 	})
 
@@ -26,7 +26,7 @@ func main() {
 
 	horizontalScrollbar := viewty.NewScrollbar()
 	horizontalScrollbar.SetHorizontal(true)
-	horizontalScrollbar.SetChangedFunc(func(pos int) {
+	horizontalScrollbar.SetOnChange(func(pos int) {
 		log.Printf("Horizontal scrollbar position: %d", pos)
 	})
 

@@ -21,6 +21,14 @@ const defaultStyleJSON = `
 		"foregroundFocusColor": "#ffffff",
 		"backgroundFocusColor": "#8080ff"
 	},
+	"List": {
+		"itemForegroundColor": "#dddddd",
+		"itemBackgroundColor": "#0000ff",
+		"selectedItemForegroundColor": "#ffffff",
+		"selectedItemBackgroundColor": "#8080ff",
+		"itemFocusForegroundColor": "#ffffff",
+		"itemFocusBackgroundColor": "#0000ff"
+	},
 	"ScrollbarTrack": {
 		"trackColor": "#ffff00",
 		"thumbColor": "#00ff00"

@@ -5,7 +5,7 @@ type Scrollbar struct {
 	track       *ScrollbarTrack
 	upBtn       *Button
 	downBtn     *Button
-	changedFunc func(position int)
+	onChange    func(position int)
 }
 
 func NewScrollbar() *Scrollbar {
@@ -30,16 +30,16 @@ func NewScrollbar() *Scrollbar {
 	upBtn.SetOnClick(func(id string) {
 		pos := scrollbar.track.ThumbPosition() - max(scrollbar.track.ThumbSize()/2, 1)
 		newPos := scrollbar.track.SetThumbPosition(pos)
-		if scrollbar.changedFunc != nil {
-			scrollbar.changedFunc(newPos)
+		if scrollbar.onChange != nil {
+			scrollbar.onChange(newPos)
 		}
 	})
 
 	downBtn.SetOnClick(func(id string) {
 		pos := scrollbar.track.ThumbPosition() + max(scrollbar.track.ThumbSize()/2, 1)
 		newPos := scrollbar.track.SetThumbPosition(pos)
-		if scrollbar.changedFunc != nil {
-			scrollbar.changedFunc(newPos)
+		if scrollbar.onChange != nil {
+			scrollbar.onChange(newPos)
 		}
 	})
 
@@ -58,9 +58,9 @@ func (s *Scrollbar) SetHorizontal(isHorizontal bool) {
 	}
 }
 
-func (s *Scrollbar) SetChangedFunc(changedFunc func(position int)) {
-	s.changedFunc = changedFunc
-	s.track.SetChangedFunc(changedFunc)
+func (s *Scrollbar) SetOnChange(changedFunc func(position int)) {
+	s.onChange = changedFunc
+	s.track.SetOnChange(changedFunc)
 }
 
 func (s *Scrollbar) HandleMouseEvent(mouseEvent MouseEvent) bool {
@@ -73,4 +73,28 @@ func (s *Scrollbar) HandleKeyEvent(keyEvent KeyEvent) bool {
 
 func (s *Scrollbar) Render(painter Painter) {
 	s.Flex.Render(painter)
+}
+
+func (s *Scrollbar) SetThumbPosition(position int) int {
+	return s.track.SetThumbPosition(position)
+}
+
+func (s *Scrollbar) ThumbPosition() int {
+	return s.track.ThumbPosition()
+}
+
+func (s *Scrollbar) SetThumbSize(size int) {
+	s.track.SetThumbSize(size)
+}
+
+func (s *Scrollbar) ThumbSize() int {
+	return s.track.ThumbSize()
+}
+
+func (s *Scrollbar) SetMax(max int) {
+	s.track.SetMax(max)
+}
+
+func (s *Scrollbar) Max() int {
+	return s.track.Max()
 }

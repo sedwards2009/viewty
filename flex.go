@@ -47,7 +47,11 @@ func (f *Flex) AddWidget(widget Widget, fixed int, proportion int) {
 
 func (f *Flex) Reposition(x int, y int, width int, height int) {
 	f.WidgetBase.Reposition(x, y, width, height)
+	f.Relayout()
+}
 
+func (f *Flex) Relayout() {
+	_, _, width, height := f.Position()
 	if f.vertical {
 		yList, heightList := layout(height, f.gapSize, f.items)
 		for i, item := range f.items {
