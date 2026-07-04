@@ -15,6 +15,7 @@ require (
 )
 
 require (
+	github.com/bits-and-blooms/bitset v1.24.5 // indirect
 	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect

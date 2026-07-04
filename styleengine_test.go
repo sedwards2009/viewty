@@ -9,7 +9,7 @@ import (
 
 func TestLoadStyleRulesJSON(t *testing.T) {
 	config := `{
-		"*": {
+		"": {
 			"foregroundColor": "#ffffff",
 			"backgroundColor": "#000000"
 		},
@@ -72,12 +72,6 @@ func TestNewStyleBuilder(t *testing.T) {
 	assert.NotNil(t, builder)
 }
 
-func TestStyleBuilderSetDefaultStyles(t *testing.T) {
-	defaultMap := StyleMap{"foregroundColor": tcell.GetColor("#ffffff")}
-	builder := NewStyleBuilder().SetDefaultStyles(defaultMap)
-	assert.NotNil(t, builder)
-}
-
 func TestStyleBuilderAddWidgetRule(t *testing.T) {
 	builder := NewStyleBuilder().AddWidgetRule("Button", StyleMap{"foregroundColor": tcell.GetColor("#ff0000")})
 	assert.NotNil(t, builder)
@@ -99,7 +93,7 @@ func TestStyleBuilderLoadJSON(t *testing.T) {
 
 func TestStyleBuilderBuild(t *testing.T) {
 	config := `{
-		"*": {
+		"": {
 			"foregroundColor": "#ffffff",
 			"backgroundColor": "#000000"
 		},
@@ -194,4 +188,94 @@ func TestParseRuleStylesWithInheritance(t *testing.T) {
 	assert.Equal(t, tcell.GetColor("#0000ff"), result["backgroundColor"])
 	assert.Equal(t, tcell.GetColor("#ff0000"), result["foregroundColor"])
 	assert.Equal(t, "small", result["size"])
+}
+
+func TestClasses(t *testing.T) {
+	config := `{
+		"Button": {
+			"size": "small"
+		},
+		"Button.big": {
+			"size": "big"
+		},
+		"Button.big.biggest": {
+			"size": "biggest"
+		}
+	}`
+
+	err := NewStyleBuilder().LoadJSON(config)
+	assert.NoError(t, err)
+
+	styleFunc, err := LoadStyleRules(config)
+	assert.NoError(t, err)
+
+	result := styleFunc(nil, "Button", nil)
+	assert.Equal(t, "small", result["size"])
+
+	result2 := styleFunc(nil, "Button", []string{"big"})
+	assert.Equal(t, "big", result2["size"])
+
+	result3 := styleFunc(nil, "Button", []string{"big", "biggest"})
+	assert.Equal(t, "biggest", result3["size"])
+}
+
+func TestClassesNoWidgetSelector(t *testing.T) {
+	config := `{
+		"": {
+			"size": "small"
+		},
+		".big": {
+			"size": "big"
+		},
+		".big.biggest": {
+			"size": "biggest"
+		}
+	}`
+
+	err := NewStyleBuilder().LoadJSON(config)
+	assert.NoError(t, err)
+
+	styleFunc, err := LoadStyleRules(config)
+	assert.NoError(t, err)
+
+	result := styleFunc(nil, "Button", nil)
+	assert.Equal(t, "small", result["size"])
+
+	result2 := styleFunc(nil, "Button", []string{"big"})
+	assert.Equal(t, "big", result2["size"])
+
+	result3 := styleFunc(nil, "Button", []string{"big", "biggest"})
+	assert.Equal(t, "biggest", result3["size"])
+}
+
+func TestClassesMixed(t *testing.T) {
+	config := `{
+		"": {
+			"size": "small",
+			"color": "white"
+		},
+		".big": {
+			"size": "big"
+		},
+		".blue": {
+			"color": "blue"
+		}
+	}`
+
+	err := NewStyleBuilder().LoadJSON(config)
+	assert.NoError(t, err)
+
+	styleFunc, err := LoadStyleRules(config)
+	assert.NoError(t, err)
+
+	result := styleFunc(nil, "Button", nil)
+	assert.Equal(t, "small", result["size"])
+
+	result2 := styleFunc(nil, "Button", []string{"big"})
+	assert.Equal(t, "big", result2["size"])
+	assert.Equal(t, "white", result2["color"])
+
+	result3 := styleFunc(nil, "Button", []string{"big", "blue"})
+	assert.Equal(t, "big", result3["size"])
+	assert.Equal(t, "blue", result3["color"])
 }
