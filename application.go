@@ -4,17 +4,21 @@ import (
 	"io"
 	"log"
 	"os"
+	"slices"
 
 	tcell "github.com/gdamore/tcell/v2"
 )
 
 type Application struct {
-	screen        tcell.Screen
-	layers        []Widget
-	enableLogging bool
+	screen             tcell.Screen
+	layers             []Widget
+	enableLogging      bool
 	forceRenderChannel chan bool
-	focusWidget Widget
-	logFile *os.File
+	focusWidget        Widget
+	logFile            *os.File
+
+	hasPreviousMouseEvent bool
+	previousMouseEvent    tcell.EventMouse
 }
 
 var app *Application
@@ -22,8 +26,8 @@ var defaultStyleFunc StyleFunc
 
 func NewApplication() *Application {
 	app = &Application{
-        forceRenderChannel: make(chan bool, 100),
-        enableLogging: true,
+		forceRenderChannel: make(chan bool, 100),
+		enableLogging:      true,
 	}
 	// Load the default style
 	builder := NewStyleBuilder()
@@ -52,11 +56,15 @@ func (a *Application) ForceRender() {
 }
 
 func (a *Application) AddLayerWidget(widget Widget) {
+	if slices.Contains(a.layers, widget) {
+		return
+	}
+
 	a.layers = append(a.layers, widget)
 	widget.SetStyleFunc(defaultStyleFunc)
 	if a.screen != nil {
-    	width, height := a.screen.Size()
-    	widget.Reposition(0, 0, width, height)
+		width, height := a.screen.Size()
+		widget.Reposition(0, 0, width, height)
 	}
 }
 
@@ -78,7 +86,7 @@ func (a *Application) Focus(widget Widget) {
 }
 
 func (a *Application) HasFocus(widget Widget) bool {
-    return a.focusWidget == widget
+	return a.focusWidget == widget
 }
 
 func (a *Application) IsWidgetOnFocusPath(widget Widget) bool {
@@ -114,52 +122,52 @@ func (a *Application) Run() {
 	quitChannel := make(chan struct{}, 1)
 
 	go func() {
-	    a.screen.ChannelEvents(tcellEvents, quitChannel)
+		a.screen.ChannelEvents(tcellEvents, quitChannel)
 	}()
 
 	a.screen.Show()
 	a.rerender()
 	for {
-    	a.screen.Show()
-        select {
-            case ev := <-tcellEvents:
-          		// Process event
-          		switch ev := ev.(type) {
-          		case *tcell.EventResize:
-         			width, height := ev.Size()
-         			log.Printf("Resize(%d, %d)\n", width, height)
-                    for _, w := range a.layers {
-                        w.Reposition(0, 0, width, height)
-                    }
+		a.screen.Show()
+		select {
+		case ev := <-tcellEvents:
+			// Process event
+			switch ev := ev.(type) {
+			case *tcell.EventResize:
+				width, height := ev.Size()
+				log.Printf("Resize(%d, %d)\n", width, height)
+				for _, w := range a.layers {
+					w.Reposition(0, 0, width, height)
+				}
 
-         			a.rerender()
-         			a.screen.Sync()
+				a.rerender()
+				a.screen.Sync()
 
-          		case *tcell.EventKey:
-         			if ev.Key() == tcell.KeyEscape || ev.Key() == tcell.KeyCtrlC {
-                        quitChannel <- struct{}{}
-                        a.screen.Fini()
-                        os.Exit(0)
-         			} else {
-         			    a.handleKeyEvent(ev)
-            			a.rerender()
-         			}
+			case *tcell.EventKey:
+				if ev.Key() == tcell.KeyEscape || ev.Key() == tcell.KeyCtrlC {
+					quitChannel <- struct{}{}
+					a.screen.Fini()
+					os.Exit(0)
+				} else {
+					a.handleKeyEvent(ev)
+					a.rerender()
+				}
 
-          		case *tcell.EventMouse:
-         			a.handleMouseEvent(ev)
-         			a.rerender()
-          		}
+			case *tcell.EventMouse:
+				a.handleMouseEvent(ev)
+				a.rerender()
+			}
 
-            case <-a.forceRenderChannel:
-     			a.rerender()
-        }
+		case <-a.forceRenderChannel:
+			a.rerender()
+		}
 	}
 }
 
 func (a *Application) rerender() {
 	a.screen.Clear()
 	for _, w := range a.layers {
-	    w.Render(NewPainter(a.screen))
+		w.Render(NewPainter(a.screen))
 	}
 }
 
@@ -188,79 +196,90 @@ func (a *Application) handleMouseEvent(ev *tcell.EventMouse) {
 
 	widgetPath := a.findWidgetPath(hitWidget)
 
-    mouseEvent := mouseEventImpl{
-    	targetWidget: hitWidget,
-        sourceEvent: ev,
-    }
-    var mouseEventInter MouseEvent = &mouseEvent
+	var previousSourceEvent *tcell.EventMouse
+	if a.hasPreviousMouseEvent {
+		previousSourceEvent = &a.previousMouseEvent
+	}
 
-    // Perform a DOM event style 'capture' phase on each widget on the path.
-    mouseEvent.phase = EVENT_PHASE_CAPTURE
-    for i, _ := range widgetPath {
-    	currentTargetWidget := widgetPath[len(widgetPath) -1 -i]
-     	offsetX, offsetY := currentTargetWidget.PointToAbs(0, 0)
-        mouseEvent.x = x - offsetX
-        mouseEvent.y = y - offsetY
-        if currentTargetWidget.HandleMouseEvent(mouseEventInter) {
-        	return	// cancelled
-        }
-    }
+	mouseEvent := mouseEventImpl{
+		targetWidget:        hitWidget,
+		sourceEvent:         ev,
+		previousSourceEvent: previousSourceEvent,
+	}
+	var mouseEventInter MouseEvent = &mouseEvent
 
-    mouseEvent.phase = EVENT_PHASE_TARGET
-   	offsetX, offsetY := hitWidget.PointToAbs(0, 0)
-    mouseEvent.x = x - offsetX
-    mouseEvent.y = y - offsetY
-    if hitWidget.HandleMouseEvent(mouseEventInter) {
-    	return // cancelled
-    }
+	defer func() {
+		a.previousMouseEvent = *ev
+		a.hasPreviousMouseEvent = true
+	}()
 
-    // Now the bubble phase
-    mouseEvent.phase = EVENT_PHASE_BUBBLE
-    for _, currentTargetWidget := range widgetPath {
-	   	offsetX, offsetY := currentTargetWidget.PointToAbs(0, 0)
+	// Perform a DOM event style 'capture' phase on each widget on the path.
+	mouseEvent.phase = EVENT_PHASE_CAPTURE
+	for i, _ := range widgetPath {
+		currentTargetWidget := widgetPath[len(widgetPath)-1-i]
+		offsetX, offsetY := currentTargetWidget.PointToAbs(0, 0)
 		mouseEvent.x = x - offsetX
 		mouseEvent.y = y - offsetY
-        if currentTargetWidget.HandleMouseEvent(mouseEventInter) {
-        	return // cancelled
-        }
-    }
+		if currentTargetWidget.HandleMouseEvent(mouseEventInter) {
+			return // cancelled
+		}
+	}
+
+	mouseEvent.phase = EVENT_PHASE_TARGET
+	offsetX, offsetY := hitWidget.PointToAbs(0, 0)
+	mouseEvent.x = x - offsetX
+	mouseEvent.y = y - offsetY
+	if hitWidget.HandleMouseEvent(mouseEventInter) {
+		return // cancelled
+	}
+
+	// Now the bubble phase
+	mouseEvent.phase = EVENT_PHASE_BUBBLE
+	for _, currentTargetWidget := range widgetPath {
+		offsetX, offsetY := currentTargetWidget.PointToAbs(0, 0)
+		mouseEvent.x = x - offsetX
+		mouseEvent.y = y - offsetY
+		if currentTargetWidget.HandleMouseEvent(mouseEventInter) {
+			return // cancelled
+		}
+	}
 }
 
 func (a *Application) handleKeyEvent(ev *tcell.EventKey) {
 	hitWidget := a.focusWidget
 	if hitWidget == nil {
-	    return
+		return
 	}
 
 	widgetPath := a.findWidgetPath(hitWidget)
 
-    keyEvent := keyEventImpl{
-     	targetWidget: hitWidget,
-        	sourceEvent: ev,
-    }
-    var keyEventInter KeyEvent = &keyEvent
+	keyEvent := keyEventImpl{
+		targetWidget: hitWidget,
+		sourceEvent:  ev,
+	}
+	var keyEventInter KeyEvent = &keyEvent
 
-    // Perform a DOM event style 'capture' phase on each widget on the path.
-    keyEvent.phase = EVENT_PHASE_CAPTURE
-    for i, _ := range widgetPath {
-     	currentTargetWidget := widgetPath[len(widgetPath) -1 -i]
-        if currentTargetWidget.HandleKeyEvent(keyEventInter) {
-        	return	// cancelled
-        }
-    }
+	// Perform a DOM event style 'capture' phase on each widget on the path.
+	keyEvent.phase = EVENT_PHASE_CAPTURE
+	for i, _ := range widgetPath {
+		currentTargetWidget := widgetPath[len(widgetPath)-1-i]
+		if currentTargetWidget.HandleKeyEvent(keyEventInter) {
+			return // cancelled
+		}
+	}
 
-    keyEvent.phase = EVENT_PHASE_TARGET
-    if hitWidget.HandleKeyEvent(keyEventInter) {
-     	return // cancelled
-    }
+	keyEvent.phase = EVENT_PHASE_TARGET
+	if hitWidget.HandleKeyEvent(keyEventInter) {
+		return // cancelled
+	}
 
-    // Now the bubble phase
-    keyEvent.phase = EVENT_PHASE_BUBBLE
-    for _, currentTargetWidget := range widgetPath {
-        if currentTargetWidget.HandleKeyEvent(keyEventInter) {
-        	return // cancelled
-        }
-    }
+	// Now the bubble phase
+	keyEvent.phase = EVENT_PHASE_BUBBLE
+	for _, currentTargetWidget := range widgetPath {
+		if currentTargetWidget.HandleKeyEvent(keyEventInter) {
+			return // cancelled
+		}
+	}
 }
 
 func (a *Application) setupLogging() *os.File {

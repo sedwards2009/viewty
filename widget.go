@@ -17,6 +17,9 @@ type MouseEvent interface {
 	SourceEvent() *tcell.EventMouse
 	Phase() EventPhase
 	TargetWidget() Widget
+	PreviousSourceEvent() *tcell.EventMouse
+	IsLeftMousePress() bool
+	IsLeftMouseRelease() bool
 }
 
 type KeyEvent interface {

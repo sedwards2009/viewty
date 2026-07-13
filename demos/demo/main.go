@@ -16,16 +16,54 @@ func main() {
 	rootFlexH.SetName("Root Flex")
 
 	White := tcell.NewHexColor(0xf3f3f3).TrueColor()
-    Blue := tcell.NewHexColor(0x007ace).TrueColor()
-    Red := tcell.NewHexColor(0xce7a00).TrueColor()
-    Green := tcell.NewHexColor(0x00ce7a).TrueColor()
-    Yellow := tcell.NewHexColor(0xcece00).TrueColor()
+	Blue := tcell.NewHexColor(0x007ace).TrueColor()
+	Red := tcell.NewHexColor(0xce7a00).TrueColor()
+	Green := tcell.NewHexColor(0x00ce7a).TrueColor()
+	Yellow := tcell.NewHexColor(0xcece00).TrueColor()
 
-    leftVFlex := viewty.NewVFlex()
-    leftVFlex.SetName("leftVFlex")
+	leftVFlex := viewty.NewVFlex()
+	leftVFlex.SetName("leftVFlex")
 
-    blueBox := viewty.NewBox()
-    blueBox.SetName("BlueBox")
+	menubar := viewty.NewMenuBar()
+	menus := []*viewty.Menu{
+		&viewty.Menu{
+			ID:    "file",
+			Title: "File",
+			Items: []*viewty.MenuItem{
+				&viewty.MenuItem{
+					ID:    "open",
+					Title: "Open",
+				},
+			},
+		},
+		&viewty.Menu{
+			ID:    "edit",
+			Title: "Edit",
+			Items: []*viewty.MenuItem{
+				&viewty.MenuItem{
+					ID:       "cut",
+					Title:    "Cut",
+					Shortcut: "Ctrl+X",
+				},
+				&viewty.MenuItem{
+					ID:       "copy",
+					Title:    "Copy",
+					Shortcut: "Ctrl+C",
+				},
+				&viewty.MenuItem{
+					ID:       "paste",
+					Title:    "Paste",
+					Shortcut: "Ctrl+V",
+				},
+			},
+		},
+	}
+	menubar.SetMenus(menus)
+
+	leftVFlex.AddWidget(menubar, 1, 0)
+
+	blueBox := viewty.NewBox()
+	blueBox.SetName("BlueBox")
 	blueBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Blue))
 	leftVFlex.AddWidget(blueBox, 0, 1)
 
@@ -33,9 +71,9 @@ func main() {
 	dialogButton.SetText("Dialog Test")
 	var dialog viewty.Widget
 	dialogButton.SetOnClick(func(id string) {
-	    dialog = MakeDialog(func() {
-					app.RemoveLayerWidget(dialog)
-				})
+		dialog = MakeDialog(func() {
+			app.RemoveLayerWidget(dialog)
+		})
 		app.AddLayerWidget(dialog)
 	})
 	leftVFlex.AddWidget(dialogButton, 1, 0)
@@ -52,43 +90,43 @@ func main() {
 
 	scrollContent := viewty.NewHFlex()
 	scrollContent.SetName("scrollContent")
-    redBox := viewty.NewBox()
-    redBox.SetName("RedBox")
-    redBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Red))
-    scrollContent.AddWidget(redBox, 0, 1)
+	redBox := viewty.NewBox()
+	redBox.SetName("RedBox")
+	redBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Red))
+	scrollContent.AddWidget(redBox, 0, 1)
 
-    greenBox := viewty.NewDotBox()
-    greenBox.SetName("GreenBox")
-    greenBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Green))
-    scrollContent.AddWidget(greenBox, 0, 1)
+	greenBox := viewty.NewDotBox()
+	greenBox.SetName("GreenBox")
+	greenBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Green))
+	scrollContent.AddWidget(greenBox, 0, 1)
 
-    yellowBox := viewty.NewBox()
-    yellowBox.SetName("yellowBox")
-    yellowBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Yellow))
-    scrollContent.AddWidget(yellowBox, 0, 1)
+	yellowBox := viewty.NewBox()
+	yellowBox.SetName("yellowBox")
+	yellowBox.SetBackgroundStyle(tcell.StyleDefault.Foreground(White).Background(Yellow))
+	scrollContent.AddWidget(yellowBox, 0, 1)
 
-    scrollArea.SetContentWidget(scrollContent)
-    scrollArea.SetMinimumSize(80, 60)
+	scrollArea.SetContentWidget(scrollContent)
+	scrollArea.SetMinimumSize(80, 60)
 
 	leftVFlex.AddWidget(scrollArea, 0, 1)
 
 	scrollLeftButton := viewty.NewButton()
 	scrollLeftButton.SetText("Left")
-	scrollLeftButton.SetOnClick(func (id string) {
-		scrollArea.SetOffsetX(scrollArea.OffsetX()-1)
+	scrollLeftButton.SetOnClick(func(id string) {
+		scrollArea.SetOffsetX(scrollArea.OffsetX() - 1)
 	})
 	scrollRightButton := viewty.NewButton()
 	scrollRightButton.SetText("Right")
-	scrollRightButton.SetOnClick(func (id string) {
-		scrollArea.SetOffsetX(scrollArea.OffsetX()+1)
+	scrollRightButton.SetOnClick(func(id string) {
+		scrollArea.SetOffsetX(scrollArea.OffsetX() + 1)
 	})
 
 	buttonFlex := viewty.NewHFlex()
 	buttonFlex.SetGapSize(1)
 	buttonFlex.SetName("ButtonFlex")
 	buttonFlex.AddWidget(scrollLeftButton, 0, 1)
-    buttonFlex.AddWidget(scrollRightButton, 0, 1)
-    leftVFlex.AddWidget(buttonFlex, 1, 0)
+	buttonFlex.AddWidget(scrollRightButton, 0, 1)
+	leftVFlex.AddWidget(buttonFlex, 1, 0)
 
 	vFlex := viewty.NewVFlex()
 	vFlex.SetName("vFlex")
@@ -119,26 +157,26 @@ func main() {
 
 	app.AddLayerWidget(rootFlexH)
 
-    app.Run()
+	app.Run()
 }
 
 func MakeDialog(onOk func()) viewty.Widget {
-    hFlex := viewty.NewHFlex()
-    hFlex.AddWidget(nil, 0, 10)
+	hFlex := viewty.NewHFlex()
+	hFlex.AddWidget(nil, 0, 10)
 
-    vFlex := viewty.NewVFlex()
-    vFlex.AddWidget(nil, 0, 10)
+	vFlex := viewty.NewVFlex()
+	vFlex.AddWidget(nil, 0, 10)
 
-    okButton := viewty.NewButton()
-    okButton.SetText("OK, close dialog")
-    okButton.SetOnClick(func(id string) {onOk()})
-    vFlex.AddWidget(okButton, 1, 80)
+	okButton := viewty.NewButton()
+	okButton.SetText("OK, close dialog")
+	okButton.SetOnClick(func(id string) { onOk() })
+	vFlex.AddWidget(okButton, 1, 80)
 
-    vFlex.AddWidget(nil, 0, 10)
+	vFlex.AddWidget(nil, 0, 10)
 
-    hFlex.AddWidget(vFlex, 0, 80)
+	hFlex.AddWidget(vFlex, 0, 80)
 
-    hFlex.AddWidget(nil, 0, 10)
+	hFlex.AddWidget(nil, 0, 10)
 
-    return hFlex
+	return hFlex
 }

@@ -32,6 +32,14 @@ const defaultStyleJSON = `
 	"ScrollbarTrack": {
 		"trackColor": "#ffff00",
 		"thumbColor": "#00ff00"
+	},
+	"MenuBar": {
+	    "menubarForegroundColor": "#f3f3f3",
+	    "menubarBackgroundColor": "#007ace",
+		"menuForegroundColor": "#000000",
+		"menuBackgroundColor": "#aaaaaa",
+		"menuSelectedForegroundColor": "#f3f3f3",
+		"menuSelectedBackgroundColor": "#007ace"
 	}
 }
 `
