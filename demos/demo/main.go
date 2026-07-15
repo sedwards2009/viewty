@@ -26,31 +26,31 @@ func main() {
 
 	menubar := viewty.NewMenuBar()
 	menus := []*viewty.Menu{
-		&viewty.Menu{
+		{
 			ID:    "file",
-			Title: "File",
+			Title: "&File",
 			Items: []*viewty.MenuItem{
-				&viewty.MenuItem{
+				{
 					ID:    "open",
 					Title: "Open",
 				},
 			},
 		},
-		&viewty.Menu{
+		{
 			ID:    "edit",
-			Title: "Edit",
+			Title: "&Edit",
 			Items: []*viewty.MenuItem{
-				&viewty.MenuItem{
+				{
 					ID:       "cut",
 					Title:    "Cut",
 					Shortcut: "Ctrl+X",
 				},
-				&viewty.MenuItem{
+				{
 					ID:       "copy",
-					Title:    "Copy",
+					Title:    "&Copy",
 					Shortcut: "Ctrl+C",
 				},
-				&viewty.MenuItem{
+				{
 					ID:       "paste",
 					Title:    "Paste",
 					Shortcut: "Ctrl+V",

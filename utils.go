@@ -5,16 +5,15 @@ import (
 	"github.com/unilibs/uniwidth"
 )
 
-
 func PrintString(painter Painter, x int, y int, style tcell.Style, str string) {
 	i := 0
 	for _, r := range str {
 		painter.SetContent(x+i, y, r, nil, style)
-        w := uniwidth.RuneWidth(r)
-        for j := range w-1 {
-          painter.SetContent(x+j, y, ' ', nil, style)
-        }
-        i += w
+		w := uniwidth.RuneWidth(r)
+		for j := range w - 1 {
+			painter.SetContent(x+j, y, ' ', nil, style)
+		}
+		i += w
 	}
 }
 
@@ -38,4 +37,36 @@ func PrintCenteredString(painter Painter, x int, y int, width int, style tcell.S
 		offset = 0
 	}
 	PrintString(painter, x+offset, y, style, str)
+}
+
+/**
+ * A label is a string where th e ampersand character is used to preceed and
+ * introduce a shortcut character which should be rendered differently.
+ */
+func LabelWidth(label string) int {
+	w := 0
+	for _, r := range label {
+		if r != '&' {
+			w += uniwidth.RuneWidth(r)
+		}
+	}
+	return w
+}
+
+func PrintLabel(painter Painter, x int, y int, str string, style tcell.Style, shortcutStyle tcell.Style) {
+	i := 0
+	currentStyle := style
+	for _, r := range str {
+		if r == '&' {
+			currentStyle = shortcutStyle
+			continue
+		}
+		painter.SetContent(x+i, y, r, nil, currentStyle)
+		w := uniwidth.RuneWidth(r)
+		for j := range w - 1 {
+			painter.SetContent(x+j, y, ' ', nil, currentStyle)
+		}
+		i += w
+		currentStyle = style
+	}
 }

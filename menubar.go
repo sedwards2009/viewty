@@ -2,7 +2,6 @@ package viewty
 
 import (
 	"os"
-	"strings"
 
 	tcell "github.com/gdamore/tcell/v2"
 	"github.com/unilibs/uniwidth"
@@ -58,6 +57,10 @@ func (menuBar *MenuBar) Open(menuItem int) {
 	menuBar.selectMenuBarItem(menuItem)
 }
 
+func isLinuxTerm() bool {
+	return os.Getenv("TERM") == "linux"
+}
+
 func (menuBar *MenuBar) Render(painter Painter) {
 	_, _, width, _ := menuBar.Position()
 
@@ -74,28 +77,36 @@ func (menuBar *MenuBar) Render(painter Painter) {
 	}
 
 	fg, bg, _ := menuBarStyle.Decompose()
-	reverse := menuBarStyle.Foreground(bg).Background(fg)
+	reverseMenuBarStyle := menuBarStyle.Foreground(bg).Background(fg)
+
+	menuBarShortcutStyle := menuBarStyle.Underline(true)
+	reverseMenuBarShortcutStyle := menuBarShortcutStyle.Reverse(true)
+
+	if isLinuxTerm() {
+		// In bare Linux TTYs, underline is often emulated by color 4 (Blue).
+		// If the menu bar background is Blue, underlined mnemonics become invisible.
+		// We fix this by using a different color with no underline attribute.
+		linuxConsoleMenuBarShortcutStyle := GetTCellStyle(styles, "linuxConsoleMenubarShortcutForegroundColor", "linuxConsoleMenubarShortcutBackgroundColor")
+		menuBarShortcutStyle = linuxConsoleMenuBarShortcutStyle
+		reverseMenuBarShortcutStyle = linuxConsoleMenuBarShortcutStyle.Reverse(true)
+	}
 
 	dx := 0
-	isLinuxTerm := os.Getenv("TERM") == "linux"
 	for i, menu := range menuBar.menus {
 		title := menu.Title
 		style := menuBarStyle
+		shortcutStyle := menuBarShortcutStyle
 		isSelected := i == menuBar.selectedPath[0]
 		if isSelected {
-			style = reverse
-		} else if isLinuxTerm {
-			// In bare Linux TTYs, underline is often emulated by color 4 (Blue).
-			// If the menu bar background is Blue, underlined mnemonics become invisible.
-			// We fix this by using a different color (Yellow) and removing the underline attribute.
-			title = strings.ReplaceAll(title, "[::u]", "[yellow]") // TODO
-			title = strings.ReplaceAll(title, "[::U]", "[-]")
+			style = reverseMenuBarStyle
+			shortcutStyle = reverseMenuBarShortcutStyle
 		}
+
 		PrintString(painter, dx, 0, style, padding)
 		dx += MENU_BAR_PADDING
 
-		titleWidth := uniwidth.StringWidth(title)
-		PrintString(painter, dx, 0, style, title)
+		titleWidth := LabelWidth(title)
+		PrintLabel(painter, dx, 0, title, style, shortcutStyle)
 		dx += titleWidth
 		menu.charWidth = titleWidth
 
@@ -372,6 +383,18 @@ func (menuOverlay *menuOverlay) drawMenuItems(painter Painter, menuX int, menuY 
 	menuStyle := GetTCellStyle(styles, "menuForegroundColor", "menuBackgroundColor")
 	menuSelectedStyle := GetTCellStyle(styles, "menuSelectedForegroundColor", "menuSelectedBackgroundColor")
 
+	menuShortcutStyle := menuStyle.Underline(true)
+	reverseMenuShortcutStyle := menuSelectedStyle.Underline(true)
+
+	if isLinuxTerm() {
+		// In bare Linux TTYs, underline is often emulated by color 4 (Blue).
+		// If the menu bar background is Blue, underlined mnemonics become invisible.
+		// We fix this by using a different color with no underline attribute.
+		linuxConsoleMenuShortcutStyle := GetTCellStyle(styles, "linuxConsoleMenuShortcutForegroundColor", "linuxConsoleMenuShortcutBackgroundColor")
+		menuShortcutStyle = linuxConsoleMenuShortcutStyle
+		reverseMenuShortcutStyle = linuxConsoleMenuShortcutStyle.Reverse(true)
+	}
+
 	DrawCappedHorizontalLine(painter, menuX, y, menuWidth, menuStyle, menuStyle, '┌', '─', '┐')
 	y++
 
@@ -380,11 +403,13 @@ func (menuOverlay *menuOverlay) drawMenuItems(painter Painter, menuX int, menuY 
 			DrawCappedHorizontalLine(painter, menuX, y, menuWidth, menuStyle, menuStyle, '├', '─', '┤')
 		} else {
 			textStyle := menuStyle
+			shortcutStyle := menuShortcutStyle
 			if i == selectedIndex {
 				textStyle = menuSelectedStyle
+				shortcutStyle = reverseMenuShortcutStyle
 			}
 			DrawCappedHorizontalLine(painter, menuX, y, menuWidth, menuStyle, textStyle, '│', ' ', '│')
-			PrintString(painter, menuX+2, y, textStyle, item.Title)
+			PrintLabel(painter, menuX+2, y, item.Title, textStyle, shortcutStyle)
 			PrintString(painter, menuX+2+titleWidth+2, y, textStyle, item.Shortcut)
 		}
 		y++
